@@ -3,7 +3,6 @@ set(IMU_SRCS
         IMUMath.cpp 
         IMU.cpp 
         Fusion.cpp
-        OrientationEstimator.cpp
         spidev_lib.cpp
 )
 
