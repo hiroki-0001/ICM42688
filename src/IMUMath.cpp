@@ -99,11 +99,11 @@ float Vector3::length()
             m_data[2] * m_data[2]);
 }
 
-void Vector3::convertToVector(unsigned char *rawData, Vector3& vec, float scale)
+void Vector3::convertToVector(unsigned char *rawData, Vector3& vec, float scale, float *Bias)
 {
-    vec.setX((float)((int16_t)(((uint16_t)rawData[0] << 8) | (uint16_t)rawData[1])) * scale);
-    vec.setY((float)((int16_t)(((uint16_t)rawData[2] << 8) | (uint16_t)rawData[3])) * scale);
-    vec.setZ((float)((int16_t)(((uint16_t)rawData[4] << 8) | (uint16_t)rawData[5])) * scale);
+    vec.setX(((float)((int16_t)(((uint16_t)rawData[0] << 8) | (uint16_t)rawData[1])) * scale) - Bias[0]);
+    vec.setY(((float)((int16_t)(((uint16_t)rawData[2] << 8) | (uint16_t)rawData[3])) * scale) - Bias[1]);
+    vec.setZ(((float)((int16_t)(((uint16_t)rawData[4] << 8) | (uint16_t)rawData[5])) * scale) - Bias[2]);
 }
 
 float Vector3::dotProduct(const Vector3& a, const Vector3& b)

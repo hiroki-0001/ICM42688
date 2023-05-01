@@ -20,10 +20,20 @@
 //  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 //  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include <unistd.h>
+#include <sched.h>
+#include <sys/resource.h>
 #include "ICM42688.hpp"
 
 int main(void)
 {
+  auto pid = getpid();
+  auto err = setpriority(PRIO_PROCESS, pid, -20);
+  if (err == -1)
+  {
+    std::cout << strerror(errno) << std::endl;
+  }
+
   ICM42688 imu;
   imu.begin();
 

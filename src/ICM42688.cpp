@@ -62,6 +62,7 @@ bool ICM42688::begin()
 
         enableFifo(true, true, true);
         setSlerpPower(0.02);
+        setoffsetBias();
         
         return true;
     }
@@ -286,12 +287,12 @@ bool ICM42688::IMURead()
     _fifoSize = (((uint16_t) reg[0]) << 8) + (((uint16_t) reg[1]));
 
     // FIFOのオーバーフローの処理　2048byteに到達した際、FIFOのbufferを空にする。
-    if(_fifoSize >= 512)
+    if(_fifoSize >= 2048)
     {
         if(!spidev->write(ICM42688reg::UB0_REG_SIGNAL_PATH_RESET, 0x02, "Failed to FIFO buffer flush"))
             return false;
         std::cout << "fifo full to flush" << std::endl;
-        m_imuData.timestamp += m_sampleInterval * (512 / _fifoFrameSize + 1); // try to fix timestamp
+        m_imuData.timestamp += m_sampleInterval * (2048 / _fifoFrameSize + 1); // try to fix timestamp
         return false;
     }
 
@@ -312,10 +313,10 @@ bool ICM42688::IMURead()
     }
 
     if(_enFifoAccel)
-        Vector3::convertToVector(_buffer + 1, m_imuData.accel,_accelScale);
+        Vector3::convertToVector(_buffer + 1, m_imuData.accel, _accelScale, _accelBias);
 
     if(_enFifoGyro)
-        Vector3::convertToVector(_buffer + 7, m_imuData.gyro,_gyroScale);
+        Vector3::convertToVector(_buffer + 7, m_imuData.gyro, _gyroScale, _gyroBias);
 
     if(_enFifoTemp)
         IMU::convertToTemperature(_buffer + 13);
@@ -338,8 +339,7 @@ bool ICM42688::IMURead()
 }
 
 // FIFOなしで加速度・ジャイロの値を取得するときに使用。
-// そのため現状では、加速度とジャイロを混ぜて、姿勢推定する事はできない
-// デバッグ用として使用する予定
+// calibration用に使用する
 
 bool ICM42688::readData(int16_t *data)
 {
@@ -401,18 +401,19 @@ bool ICM42688::offsetBias()
     _gyroBias[1] = sum[4] * _gyroScale / 128.0f;
     _gyroBias[2] = sum[5] * _gyroScale / 128.0f;
 
-    for(int i = 0; i < 3; i++)
-    {
-        std::cout << i << " accel bias = " <<  _accelBias[i] << std::endl;
-        std::cout << i << " gyro bias = " <<  _gyroBias[i] << std::endl;
-    }
-
     if(_accelBias[0] > 0.8f)  {_accelBias[0] -= 1.0f;}  // Remove gravity from the x-axis accelerometer bias calculation
     if(_accelBias[0] < -0.8f) {_accelBias[0] += 1.0f;}  // Remove gravity from the x-axis accelerometer bias calculation
     if(_accelBias[1] > 0.8f)  {_accelBias[1] -= 1.0f;}  // Remove gravity from the y-axis accelerometer bias calculation
     if(_accelBias[1] < -0.8f) {_accelBias[1] += 1.0f;}  // Remove gravity from the y-axis accelerometer bias calculation
     if(_accelBias[2] > 0.8f)  {_accelBias[2] -= 1.0f;}  // Remove gravity from the z-axis accelerometer bias calculation
-    if(_accelBias[2] < -0.8f) {_accelBias[2] += 1.0f;}  // Remove gravity 
+    if(_accelBias[2] < -0.8f) {_accelBias[2] += 1.0f;}  // Remove gravity from the z-axis accelerometer bias calculation
+
+    std::cout << " acc x bias = " <<  _accelBias[0] << std::endl;
+    std::cout << " acc y bias = " <<  _accelBias[1] << std::endl;
+    std::cout << " acc z bias = " <<  _accelBias[2] << std::endl;
+    std::cout << " gyro x bias = " <<  _gyroBias[0] << std::endl;
+    std::cout << " gyro y bias = " <<  _gyroBias[1] << std::endl;
+    std::cout << " gyro z bias = " <<  _gyroBias[2] << std::endl;
 
     // recover the full scale setting
     if(!setAccelResolutionScale(accel_current_fssel))
@@ -422,4 +423,28 @@ bool ICM42688::offsetBias()
         return false;
     
     return true;
+}
+
+void ICM42688::setoffsetBias()
+{
+  // offset bias
+  float accBias[3] =
+  {
+    -0.00110626,
+    -0.0178366,
+    0.00880909
+  };
+
+  float gyroBias[3] = 
+  {
+    -0.325859,
+    -0.0965595,
+    -0.136614
+  };
+
+    for(int i = 0; i < 3; i++)
+    {
+        _accelBias[i] = accBias[i];
+        _gyroBias[i] = gyroBias[i];
+    }
 }
