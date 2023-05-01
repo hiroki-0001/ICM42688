@@ -341,21 +341,85 @@ bool ICM42688::IMURead()
 // そのため現状では、加速度とジャイロを混ぜて、姿勢推定する事はできない
 // デバッグ用として使用する予定
 
-// bool ICM42688::IMURead()
-// {
-//     uint8_t count = 12;
-//     spidev->read(ICM42688reg::UB0_REG_ACCEL_DATA_X1, count, _buffer, "error");
-//     Vector3::convertToVector(_buffer, m_imuData.accel,_accelScale);
-//     Vector3::convertToVector(_buffer + 6, m_imuData.gyro,_gyroScale);
+bool ICM42688::readData(int16_t *data)
+{
+    if(!spidev->read(ICM42688reg::UB0_REG_ACCEL_DATA_X1, 12, _buffer, "Failed to read data of accel & gyro"))
+        return false;
 
-//     if (m_firstTime_ICM42688)
-//         m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
-//     else
-//         m_imuData.timestamp += m_sampleInterval;
+    data[0] = (uint16_t)_buffer[0] << 8 | _buffer[1];
+    data[1] = (uint16_t)_buffer[2] << 8 | _buffer[3];
+    data[2] = (uint16_t)_buffer[4] << 8 | _buffer[5];
+    data[3] = (uint16_t)_buffer[6] << 8 | _buffer[7];
+    data[4] = (uint16_t)_buffer[8] << 8 | _buffer[9];
+    data[5] = (uint16_t)_buffer[10] << 8 | _buffer[11];
 
-//     m_firstTime_ICM42688 = false;
+    return true;
+}
 
-//     updateFusion();
+bool ICM42688::offsetBias()
+{   
+    std::cout << "calibration start !!" << std::endl;
+    //キャリブレーション中はIMUを動かさないので、分解能を高く設定する
+    const AccelFS accel_current_fssel = _accelFS;
+    const GyroFS gyro_current_fssel = _gyroFS;
+    
+    if(!setAccelResolutionScale(gpm2))
+        return false;
+    
+    if(!setGyroResolutionScale(dps250))
+        return false;
 
-//     return true;
-// }
+    static bool called_first_time = true;
+
+    int16_t data[6] = {0, 0, 0, 0, 0, 0};
+    int32_t sum[6] = {0, 0, 0, 0, 0, 0};
+    
+    // IMUのデータ取得の際、最初に取得するデータはノイズが大きいため排除する
+    if(called_first_time)
+    {
+        readData(data);
+        spidev->delayMs(50);
+        called_first_time = false;
+    }
+
+    for(int i = 0; i < 128; i++)
+    {
+        readData(data);
+        sum[0] += data[0];
+        sum[1] += data[1];
+        sum[2] += data[2];
+        sum[3] += data[3];
+        sum[4] += data[4];
+        sum[5] += data[5];
+        spidev->delayMs(50);
+    }
+
+    _accelBias[0] = sum[0] * _accelScale / 128.0f;
+    _accelBias[1] = sum[1] * _accelScale / 128.0f;
+    _accelBias[2] = sum[2] * _accelScale / 128.0f;
+    _gyroBias[0] = sum[3] * _gyroScale / 128.0f;
+    _gyroBias[1] = sum[4] * _gyroScale / 128.0f;
+    _gyroBias[2] = sum[5] * _gyroScale / 128.0f;
+
+    for(int i = 0; i < 3; i++)
+    {
+        std::cout << i << " accel bias = " <<  _accelBias[i] << std::endl;
+        std::cout << i << " gyro bias = " <<  _gyroBias[i] << std::endl;
+    }
+
+    if(_accelBias[0] > 0.8f)  {_accelBias[0] -= 1.0f;}  // Remove gravity from the x-axis accelerometer bias calculation
+    if(_accelBias[0] < -0.8f) {_accelBias[0] += 1.0f;}  // Remove gravity from the x-axis accelerometer bias calculation
+    if(_accelBias[1] > 0.8f)  {_accelBias[1] -= 1.0f;}  // Remove gravity from the y-axis accelerometer bias calculation
+    if(_accelBias[1] < -0.8f) {_accelBias[1] += 1.0f;}  // Remove gravity from the y-axis accelerometer bias calculation
+    if(_accelBias[2] > 0.8f)  {_accelBias[2] -= 1.0f;}  // Remove gravity from the z-axis accelerometer bias calculation
+    if(_accelBias[2] < -0.8f) {_accelBias[2] += 1.0f;}  // Remove gravity 
+
+    // recover the full scale setting
+    if(!setAccelResolutionScale(accel_current_fssel))
+        return false;
+
+    if(!setGyroResolutionScale(gyro_current_fssel))
+        return false;
+    
+    return true;
+}

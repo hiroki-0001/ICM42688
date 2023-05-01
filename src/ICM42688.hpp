@@ -102,6 +102,9 @@ public:
 
   bool enableFifo(bool accel, bool gyro, bool temp);
   bool IMURead();
+  bool readData(int16_t *data);
+
+  bool offsetBias();
 
   int IMUGetPollInterval();
 
@@ -111,6 +114,9 @@ protected:
   float _gyroScale = 0.0f;
   AccelFS _accelFS;
   GyroFS _gyroFS;
+  float _accelBias[3] = {0.0f, 0.0f, 0.0f};
+  float _gyroBias[3] = {0.0f, 0.0f, 0.0f};
+
   uint8_t _buffer[12] = {};
   // Constants
   static constexpr uint8_t WHO_AM_I = 0x47;      ///< expected value in UB0_REG_WHO_AM_I reg
