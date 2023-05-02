@@ -161,6 +161,7 @@ void FusionKalman4::newIMUData(IMU_DATA& data)
         m_gyro = data.gyro;
     else
         m_gyro = Vector3();
+
     m_accel = data.accel;
 
     if (m_firstTime_fusion)
@@ -230,6 +231,7 @@ void FusionKalman4::predict()
     m_Fk.setVal(3, 1, y2);
     m_Fk.setVal(3, 2, -x2);
 
+    // 転置
     m_FkTranspose = m_Fk.transposed();
 
     // Predict new state estimate Xkk_1 = Fk * Xk_1k_1
@@ -260,11 +262,10 @@ void FusionKalman4::update()
     Quaternion delta;
     Matrix4x4 Sk, SkInverse;
 
-    if (m_enableAccel) {
+    if (m_enableAccel)
         m_stateQError = m_measuredQPose - m_stateQ;
-    } else {
+    else
         m_stateQError = Quaternion();
-    }
 
     //	Compute residual covariance Sk = Hk * Pkk_1 * HkTranspose + Rk
     //  Note: since Hk is the identity matrix, this has been simplified
@@ -330,6 +331,7 @@ void FusionRTQF::reset()
         m_gyro = data.gyro;
     else
         m_gyro = Vector3();
+
     m_accel = data.accel;
 
     if (m_firstTime_fusion) {
@@ -389,10 +391,9 @@ void FusionRTQF::reset()
 
 void FusionRTQF::update()
 {
-    if (m_enableAccel) {
-
+    if (m_enableAccel) 
+    {
         // calculate rotation delta
-
         m_rotationDelta = m_stateQ.conjugate() * m_measuredQPose;
         m_rotationDelta.normalize();
 
@@ -419,4 +420,115 @@ void FusionRTQF::update()
         m_stateQ *= m_rotationPower;
         m_stateQ.normalize();
     }
+}
+
+//----------------------------------------------------------
+//
+//  The Madwick class
+//
+//----------------------------------------------------------
+
+madwick::madwick()
+{
+    std::cout << "Madwick" << std::endl;
+    reset();
+}
+
+void madwick::newIMUData(IMU_DATA& data)
+{
+    const double eps = 1e-8;    // 最小値
+	double qd[4];				// ジャイロの値から計算されるクオータニオンが変動する割合
+	double f[3];				// 目的関数
+	double J[3][4];				// ヤコビ行列
+	double nabla_f[4];			// ナブラ
+	double norm;
+    
+    double wx = data.gyro.x() * M_PI / 180.0;
+    double wy = data.gyro.y() * M_PI / 180.0;
+    double wz = data.gyro.z() * M_PI / 180.0;
+    double ax = data.accel.x() * 9.8;
+    double ay = data.accel.y() * 9.8;
+    double az = data.accel.z() * 9.8;
+
+   if (m_firstTime_fusion)
+   {
+        m_lastFusionTime = data.timestamp;
+        m_firstTime_fusion = false;
+   } 
+   else
+   {
+        dt = (float)(data.timestamp - m_lastFusionTime) / (float)1000000;
+        m_lastFusionTime = data.timestamp;
+
+        // ジャイロの計測値からクオータニオンの変動する割合を計算 (eq.11)
+        qd[0] =                    - 0.5 * q[1] * wx - 0.5 * q[2] * wy - 0.5 * q[3] * wz ;
+        qd[1] =  0.5 * q[0] * wx                     + 0.5 * q[2] * wz - 0.5 * q[3] * wy ;
+        qd[2] =  0.5 * q[0] * wy - 0.5 * q[1] * wz                     + 0.5 * q[3] * wx ;
+        qd[3] =  0.5 * q[0] * wz + 0.5 * q[1] * wy - 0.5 * q[2] * wx                     ;
+
+        // 加速度の正規化 (eq.24)
+        norm = sqrt(ax * ax + ay * ay + az * az);
+        if (norm < eps) norm = eps;
+        ax /= norm; ay /= norm; az /= norm;
+
+        // 目的関数の計算 (eq.25)
+        f[0] = 2.0 * (          q[1] * q[3] - q[0] * q[2]) - ax;
+        f[1] = 2.0 * (          q[0] * q[1] + q[2] * q[3]) - ay;
+        f[2] = 2.0 * (1.0/2.0 - q[1] * q[1] - q[2] * q[2]) - az;
+
+        // ヤコビ関数の計算 (eq.26)
+        J[0][0] = -2.0 * q[2]; J[0][1] =  2.0 * q[3]; J[0][2] = -2.0 * q[0]; J[0][3] =  2.0 * q[1];
+        J[1][0] =  2.0 * q[1]; J[1][1] =  2.0 * q[0]; J[1][2] =  2.0 * q[3]; J[1][3] =  2.0 * q[2];
+        J[2][0] =  0.0       ; J[2][1] = -4.0 * q[1]; J[2][2] = -4.0 * q[2]; J[2][3] =  0.0       ;
+
+        // ナブラを計算 (eq.34)
+        nabla_f[0] = J[0][0] * f[0] + J[1][0] * f[1] + J[2][0] * f[2];
+        nabla_f[1] = J[0][1] * f[0] + J[1][1] * f[1] + J[2][1] * f[2];
+        nabla_f[2] = J[0][2] * f[0] + J[1][2] * f[1] + J[2][2] * f[2];
+        nabla_f[3] = J[0][3] * f[0] + J[1][3] * f[1] + J[2][3] * f[2];
+
+        // 勾配を正規化 (eq.33)
+        norm = sqrt(nabla_f[0] * nabla_f[0] + nabla_f[1] * nabla_f[1] + nabla_f[2] * nabla_f[2] + nabla_f[3] * nabla_f[3]);
+        if (norm < eps) norm = eps;
+        nabla_f[0] /= norm; nabla_f[1] /= norm; nabla_f[2] /= norm; nabla_f[3] /= norm;
+
+        // 推定したクオータニオンの変動量を積分 (eq.43)
+        q[0] += (qd[0] - (beta * nabla_f[0])) * dt;
+        q[1] += (qd[1] - (beta * nabla_f[1])) * dt;
+        q[2] += (qd[2] - (beta * nabla_f[2])) * dt;
+        q[3] += (qd[3] - (beta * nabla_f[3])) * dt;
+
+        // クオータニオンを正規化
+        norm = sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+        if (norm < eps) norm = eps;
+        q[0] /= norm; q[1] /= norm; q[2] /= norm; q[3] /= norm;
+
+        // Roll, Yaw, Pitchの計算
+        double x = 2.0 * q[1] * q[3] - 2.0 * q[0] * q[2];
+        double y = 2.0 * q[2] * q[3] + 2.0 * q[0] * q[1];
+        double z = q[0] * q[0] - q[1] * q[1] - q[2] * q[2] + q[3] * q[3];
+        roll   = atan2(y, sqrt(x * x + z * z));
+        pitch  = -atan2(x, sqrt(y * y + z * z));
+        if ((abs(roll) < M_PI/4.0)&&(abs(pitch) < M_PI/4.0f)){				// 垂直から45degを超えた時にはyaw方向の角度を更新しない．
+            yaw = -atan2(2.0 * q[1] * q[2] - 2.0 * q[0] * q[3], q[0] * q[0] + q[1] * q[1] - q[2] * q[2] - q[3] * q[3]);
+        }
+
+        data.fusionPose.setX(roll);
+        data.fusionPose.setY(pitch);
+        data.fusionPose.setZ(yaw);
+
+        data.fusionQPose.setScalar(q[0]);
+        data.fusionQPose.setX(q[1]);
+        data.fusionQPose.setY(q[2]);
+        data.fusionQPose.setZ(q[3]);
+   }
+}
+
+void madwick::reset(void)
+{
+	q[0] = 1; q[1] = 0; q[2] = 0; q[3] = 0;
+	roll = pitch = yaw = 0.0;
+    dt = 0.0;
+    gyroError = 1.0;
+	beta = sqrt(3.0 / 4.0) * (M_PI * (gyroError / 180.0));
 }

@@ -129,4 +129,22 @@ class FusionRTQF : public Fusion
 
 };
 
+class madwick : public Fusion
+{
+    public:      
+        madwick();
+        void newIMUData(IMU_DATA& data);
+        void reset(void);
+
+    private:
+        double q[4];					//! 推定したクオータニオンの値
+        double dt;						//! サンプリングタイム(s)
+        double gyroError;				//! 一秒間にジャイロセンサがずれる誤差(deg/s)
+        double beta;					//! チューニングのための定数
+        double roll;					//! ロールの値
+        double pitch;					//! ピッチの値
+        double yaw;						//! ヨーの値
+
+};
+
 #endif // _FUSION_H
