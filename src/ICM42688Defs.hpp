@@ -84,7 +84,7 @@ namespace ICM42688reg {
   static constexpr uint8_t UB0_REG_ACCEL_CONFIG0 = 0x50;
   static constexpr uint8_t UB0_REG_GYRO_CONFIG1 = 0x51;
   static constexpr uint8_t UB0_REG_GYRO_ACCEL_CONFIG0 = 0x52;
-  static constexpr uint8_t UB0_REG_ACCEFL_CONFIG1 = 0x53;
+  static constexpr uint8_t UB0_REG_ACCEL_CONFIG1 = 0x53;
   static constexpr uint8_t UB0_REG_TMST_CONFIG = 0x54;
   // break
   static constexpr uint8_t UB0_REG_APEX_CONFIG0 = 0x56;
