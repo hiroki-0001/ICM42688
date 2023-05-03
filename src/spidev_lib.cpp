@@ -118,7 +118,7 @@ bool SPI::write(uint8_t regAddr, uint8_t data, const char *errorMsg)
     if(ioctl(m_spifd, SPI_IOC_MESSAGE(1), spi_message) < 0)
     {
         if (strlen(errorMsg) > 0)
-            std::cout << "SPI data write of " << regAddr << " - " << errorMsg << std::endl;
+            ERROR_LOG2(" data write of %d failed - %s\n", regAddr, errorMsg);
         return false;
     }
 
@@ -142,7 +142,7 @@ bool SPI::read(uint8_t regAddr, uint8_t length, uint8_t *data, const char *error
     if (ioctl(m_spifd, SPI_IOC_MESSAGE(1), spi_message) < 0)
     {
         if (strlen(errorMsg) > 0)
-            std::cout << "SPI read error from " << regAddr << " - " << errorMsg << std::endl;
+            ERROR_LOG2("read error from %d - %s\n", regAddr, errorMsg);
         return false;
     }
 

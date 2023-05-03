@@ -36,13 +36,15 @@ bool ICM42688::begin()
 {
     if(spidev->begin())
     {
-        setBank(0);
+        if(!setBank(0))
+            return false;
         // ICM42688 reset
         if(!spidev->write(ICM42688reg::UB0_REG_DEVICE_CONFIG, 0x01, "Failed to reset IMU"))
             return false;
         spidev->delayMs(10);
-
-        who_i_am();
+        // ICM42688 connection check
+        if(!who_i_am())
+            return false;
         // enable Accel & Gyro sensor
         if(!spidev->write(ICM42688reg::UB0_REG_PWR_MGMT0, 0x0F, "Failed to set Power mode"))
             return false;
@@ -55,7 +57,7 @@ bool ICM42688::begin()
         setGyroLowPassFilter(lpf_2);
         // set Full Scale Range
         setAccelResolutionScale(gpm8);
-        setGyroResolutionScale(dps1000);
+        setGyroResolutionScale(dps2000);
         // set Output Data Rate
         setAccelOutputDataRate(odr200);
         setGyroOutputDataRate(odr200);
@@ -75,18 +77,19 @@ bool ICM42688::begin()
 
 }
 
-int ICM42688::setBank(uint8_t bank)
+bool ICM42688::setBank(uint8_t bank)
 {
     if(_bank == bank)
     {
-        std::cout << "already set bank" << std::endl;
-        return 0;
+        MESSAGE_LOG("already set bank");
+        return true;
     }
     else
     {
         _bank = bank;
-        spidev->write(ICM42688reg::REG_BANK_SEL, bank, "Failed to write set User Bank");
-        return 0;
+        if(!spidev->write(ICM42688reg::REG_BANK_SEL, bank, "Failed to write set User Bank"))
+            return false;
+        return true;
     }
 }
 
@@ -98,12 +101,12 @@ bool ICM42688::who_i_am()
 
     if(reg == WHO_AM_I)
     {
-        std::cout << "imu connct !!!" << std::endl;
+        MESSAGE_LOG("ICM42688 connection successful !!!");
         return true;
     }
     else
     {
-        std::cout << "imu not connct !!!" << std::endl;
+        MESSAGE_LOG("ICM42688 connection failed !!!");
         return false;
     }
 }
@@ -159,6 +162,25 @@ bool ICM42688::setGyroLowPassFilter(LPF lpf)
 
 bool ICM42688::setAccelResolutionScale(AccelFS fssel)
 {
+    switch (fssel)
+    {
+    case gpm16:
+        _accelScale = 1.0/2048.0;
+        break;
+    case gpm8:
+        _accelScale = 1.0/4096.0;
+        break;
+    case gpm4:
+        _accelScale = 1.0/8192.0;
+        break;
+    case gpm2:
+        _accelScale = 1.0/16384.0;
+        break;    
+    default:
+        ERROR_LOG("Failed to set Accel FSR");
+        return false;
+    }
+
     uint8_t reg = 0;
     if(!spidev -> read(ICM42688reg::UB0_REG_ACCEL_CONFIG0, 1, &reg, "Failed to read Accel Resolution Scale"))
         return false;
@@ -169,35 +191,41 @@ bool ICM42688::setAccelResolutionScale(AccelFS fssel)
 
     _accelFS = fssel;
 
-    switch (_accelFS)
-    {
-    case gpm16:
-        // _accelScale = 1.0 / (16.0f/32768.0f);
-        _accelScale = 1.0/2048.0;
-        break;
-    case gpm8:
-        // _accelScale = 1.0 / (8.0f/32768.0f);
-        _accelScale = 1.0/4096.0;
-
-        break;
-    case gpm4:
-        // _accelScale = 1.0 / (4.0f/32768.0f);
-        _accelScale = 1.0/8192.0;
-        break;
-    case gpm2:
-        // _accelScale = 1.0 / (2.0f/32768.0f);
-        _accelScale = 1.0/16384.0;
-
-        break;    
-    default:
-        std::cout << "Failed to set Accel FSR" << std::endl;
-        return false;
-    }
-
     return true;
 }
 bool ICM42688::setGyroResolutionScale(GyroFS fssel)
 {
+    switch(fssel)
+    {
+        case dps2000:
+            _gyroScale = M_PI / (16.4 * 180.0);
+            break;
+        case dps1000:
+            _gyroScale = M_PI / (32.8 * 180.0);
+            break;
+        case dps500:
+            _gyroScale = M_PI / (62.5 * 180.0);
+            break;
+        case dps250:
+            _gyroScale = M_PI / (131.0 * 180.0);
+            break;
+        case dps125:
+            _gyroScale = M_PI / (262.1 * 180.0);
+            break;
+        case dps62_5:
+            _gyroScale = M_PI / (524.3 * 180.0);
+            break;
+        case dps31_25:
+            _gyroScale = M_PI / (1048.6 * 180.0);
+            break;
+        case dps15_625:
+            _gyroScale = M_PI / (2097.2 * 180.0);
+            break;
+        default:
+            ERROR_LOG("Failed to set Gyro FSR");
+            return false;
+    }
+
     uint8_t reg = 0;
     if(!spidev -> read(ICM42688reg::UB0_REG_GYRO_CONFIG0, 1, &reg, "Failed to read Gyro Resolution Scale"))
         return false;
@@ -208,44 +236,6 @@ bool ICM42688::setGyroResolutionScale(GyroFS fssel)
     
     _gyroFS = fssel;
     
-    switch(_gyroFS)
-    {
-        case dps2000:
-            // _gyroScale = M_PI / ((2000.0f/32768.0f) * 180.0);
-            _gyroScale = M_PI / (16.4 * 180.0);
-            break;
-        case dps1000:
-            // _gyroScale = M_PI / ((1000.0f/32768.0f) * 180.0);
-            _gyroScale = M_PI / (32.8 * 180.0);
-            break;
-        case dps500:
-            // _gyroScale = M_PI / ((500.0f/32768.0f) * 180.0);
-            _gyroScale = M_PI / (62.5 * 180.0);
-            break;
-        case dps250:
-            // _gyroScale = M_PI / ((250.0f/32768.0f) * 180.0);
-            _gyroScale = M_PI / (131.0 * 180.0);
-            break;
-        case dps125:
-            // _gyroScale = M_PI / ((125.0f/32768.0f) * 180.0);
-            _gyroScale = M_PI / (262.1 * 180.0);
-            break;
-        case dps62_5:
-            // _gyroScale = M_PI / ((62.5f/32768.0f) * 180.0);
-            _gyroScale = M_PI / (524.3 * 180.0);
-            break;
-        case dps31_25:
-            // _gyroScale = M_PI / ((31.25f/32768.0f) * 180.0);
-            _gyroScale = M_PI / (1048.6 * 180.0);
-            break;
-        case dps15_625:
-            // _gyroScale = M_PI / ((15.625f/32768.0f) * 180.0);
-            _gyroScale = M_PI / (2097.2 * 180.0);
-            break;
-        default:
-            std::cout << "Failed to set Gyro FSR" << std::endl;
-            return false;
-    }
     return true;
 }
 
@@ -301,9 +291,6 @@ bool ICM42688::enableFifo(bool accel,bool gyro, bool temp)
     // FIFO の 中身の構造 前述したデータ14byteに加えて、FIFOの情報を示す Header (1 byte), timestamp(2 byte)が含まれる。
     // Header(1) + accel(6) + gyro(6) + temp(1) + timestamp(2) 
     _fifoFrameSize = 1 + accel*6 + gyro*6 + temp*1 + 2;
-
-    std::cout << "fifo enable" << std::endl;
-
     return true;
 }
 
@@ -321,7 +308,7 @@ bool ICM42688::IMURead()
     {
         if(!spidev->write(ICM42688reg::UB0_REG_SIGNAL_PATH_RESET, 0x02, "Failed to FIFO buffer flush"))
             return false;
-        std::cout << "fifo full to flush" << std::endl;
+        MESSAGE_LOG("fifo full to flush")
         m_imuData.timestamp += m_sampleInterval * (2048  / _fifoFrameSize + 1); // try to fix timestamp
         return false;
     }
@@ -336,9 +323,8 @@ bool ICM42688::IMURead()
 
     if(_fifoSize < _fifoFrameSize)
     {
-        if(!spidev->read(ICM42688reg::UB0_REG_FIFO_DATA, _fifoSize, _buffer, "Failed to read FIFO data"))
-            return false;
-        std::cout << "fifo storage less" << std::endl;
+        spidev->read(ICM42688reg::UB0_REG_FIFO_DATA, _fifoSize, _buffer, "Failed to read FIFO data");
+        MESSAGE_LOG("fifo storage less");
         return false;
     }
 
@@ -352,12 +338,7 @@ bool ICM42688::IMURead()
         IMU::convertToTemperature(_buffer + 13);
 
     if (m_firstTime_ICM42688)
-    {
-        std::cout << "ICM42688 process first time" << std::endl;
-        // m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
-        // std::cout << "IMUMath::currentUSecsSinceEpoch = " << IMUMath::currentUSecsSinceEpoch() << std::endl;
-    }
-      
+        m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
     else
         m_imuData.timestamp += m_sampleInterval;
 

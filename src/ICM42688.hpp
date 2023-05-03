@@ -91,7 +91,7 @@ public:
   bool setSampleRate(int rate);
 
   bool begin();
-  int setBank(uint8_t bank);
+  bool setBank(uint8_t bank);
   bool who_i_am();
   bool setUIFilter();
   bool setGyroLowPassFilter(LPF lpf);
