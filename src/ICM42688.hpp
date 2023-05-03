@@ -93,6 +93,7 @@ public:
   bool begin();
   int setBank(uint8_t bank);
   bool who_i_am();
+  bool setUIFilter();
   bool setGyroLowPassFilter(LPF lpf);
   bool setAccelLowPassFilter(LPF lpf);
   bool setAccelResolutionScale(AccelFS fssel);
