@@ -53,16 +53,16 @@ bool ICM42688::begin()
         // set UI filter
         setUIFilter();
         // set Low Pass Filter
-        setAccelLowPassFilter(lpf_2);
-        setGyroLowPassFilter(lpf_2);
+        setAccelLowPassFilter(lpf_1);
+        setGyroLowPassFilter(lpf_1);
         // set Full Scale Range
         setAccelResolutionScale(gpm8);
         setGyroResolutionScale(dps2000);
         // set Output Data Rate
-        setAccelOutputDataRate(odr200);
-        setGyroOutputDataRate(odr200);
+        setAccelOutputDataRate(odr1k);
+        setGyroOutputDataRate(odr1k);
         // set sample rate [μ/sec]
-        setSampleRate(92.3);
+        setSampleRate(230.7);
 
         enableFifo(true, true, true);
         setSlerpPower(0.02);
@@ -291,51 +291,70 @@ bool ICM42688::enableFifo(bool accel,bool gyro, bool temp)
     // FIFO の 中身の構造 前述したデータ14byteに加えて、FIFOの情報を示す Header (1 byte), timestamp(2 byte)が含まれる。
     // Header(1) + accel(6) + gyro(6) + temp(1) + timestamp(2) 
     _fifoFrameSize = 1 + accel*6 + gyro*6 + temp*1 + 2;
+
+    static bool called_first_time = true;
+    int16_t data[6] = {0, 0, 0, 0, 0, 0};
+    // IMUのデータ取得の際、最初に取得するデータはノイズが大きいため排除する
+    if(called_first_time)
+    {
+        readData(data);
+        spidev->delayMs(50);
+        called_first_time = false;
+    }
+
     return true;
 }
 
 bool ICM42688::IMURead()
 {
     // FIFOで使用可能なバイト数を読み込む。 High bitと Low bitの2つに分けられているので、まとめて取得する。
-    uint8_t reg[2] = {};
-    if(!spidev->read(ICM42688reg::UB0_REG_FIFO_COUNTH, 2, reg, "Failed to read FIFO COUNT"))
+    unsigned char fifoCount[2];
+    unsigned int count = 0;
+    unsigned char fifodata[16];
+
+    if(!spidev->read(ICM42688reg::UB0_REG_FIFO_COUNTH, 2, fifoCount, "Failed to read FIFO COUNT"))
         return false;
 
-    _fifoSize = (((uint16_t) reg[0]) << 8) + (((uint16_t) reg[1]));
+    count = (((uint16_t) fifoCount[0]) << 8) + (((uint16_t) fifoCount[1]));
 
     // FIFOのオーバーフローの処理　2048byteに到達した際、FIFOのbufferを空にする。
-    if(_fifoSize >= 2048)
+    if(count == 2048)
     {
         if(!spidev->write(ICM42688reg::UB0_REG_SIGNAL_PATH_RESET, 0x02, "Failed to FIFO buffer flush"))
             return false;
-        MESSAGE_LOG("fifo full to flush")
-        m_imuData.timestamp += m_sampleInterval * (2048  / _fifoFrameSize + 1); // try to fix timestamp
+        // spidev->delayMs(50);
+        m_imuData.timestamp += m_sampleInterval * (2048  / _fifoFrameSize); // try to fix timestamp
         return false;
     }
 
-    while(_fifoSize > _fifoFrameSize)
+    while(count > _fifoFrameSize)
     {
-        if(!spidev->read(ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, _buffer, "Failed to read FIFO data"))
+        if(!spidev->read(ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to read FIFO data"))
             return false;
-        _fifoSize -= _fifoFrameSize;
+        count -= _fifoFrameSize;
         m_imuData.timestamp += m_sampleInterval;
     }
 
-    if(_fifoSize < _fifoFrameSize)
+    // FIFOの利用可能なbyte数がFIFOのFrameSize(16 byte)よりも少ない場合は、データのbyteがずれるおそれがあるため
+    // 使用しないようにする
+    if(count < _fifoFrameSize)
     {
-        spidev->read(ICM42688reg::UB0_REG_FIFO_DATA, _fifoSize, _buffer, "Failed to read FIFO data");
-        MESSAGE_LOG("fifo storage less");
+        spidev->read(ICM42688reg::UB0_REG_FIFO_DATA, count, fifodata, "Failed to read FIFO data");
         return false;
     }
 
+    // 上記の条件が一致しない場合は正常であるため、bufferからデータを読み込み、使用する
+    if(!spidev->read(ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to read fifo data"))
+        return false;
+
     if(_enFifoAccel)
-        Vector3::convertToVector(_buffer + 1, m_imuData.accel, _accelScale, _accelBias);
+        Vector3::convertToVector(fifodata + 1, m_imuData.accel, _accelScale, _accelBias);
 
     if(_enFifoGyro)
-        Vector3::convertToVector(_buffer + 7, m_imuData.gyro, _gyroScale, _gyroBias);
+        Vector3::convertToVector(fifodata + 7, m_imuData.gyro, _gyroScale, _gyroBias);
 
     if(_enFifoTemp)
-        IMU::convertToTemperature(_buffer + 13);
+        IMU::convertToTemperature(fifodata + 13);
 
     if (m_firstTime_ICM42688)
         m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
@@ -345,16 +364,18 @@ bool ICM42688::IMURead()
     m_firstTime_ICM42688 = false;
 
     updateFusion();
-    
+
     return true;
 }
 
 // bool ICM42688::IMURead()
 // {
 //     uint8_t count = 12;
-//     spidev->read(ICM42688reg::UB0_REG_ACCEL_DATA_X1, count, _buffer, "error");
-//     Vector3::convertToVector(_buffer, m_imuData.accel,_accelScale, _accelBias);
-//     Vector3::convertToVector(_buffer + 6, m_imuData.gyro,_gyroScale, _gyroBias);
+//     if(!spidev->read(ICM42688reg::UB0_REG_ACCEL_DATA_X1, count, _buffer, "error"))
+//         return false;
+
+//     Vector3::convertToVector(_buffer, m_imuData.accel, _accelScale, _accelBias);
+//     Vector3::convertToVector(_buffer + 6, m_imuData.gyro, _gyroScale, _gyroBias);
 
 //     if (m_firstTime_ICM42688)
 //         m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
@@ -427,9 +448,9 @@ bool ICM42688::offsetBias()
     _accelBias[0] = sum[0] * _accelScale / 128.0f;
     _accelBias[1] = sum[1] * _accelScale / 128.0f;
     _accelBias[2] = sum[2] * _accelScale / 128.0f;
-    _gyroBias[0] = sum[3] * _gyroScale / 128.0f;
-    _gyroBias[1] = sum[4] * _gyroScale / 128.0f;
-    _gyroBias[2] = sum[5] * _gyroScale / 128.0f;
+    _gyroBias[0]  = sum[3] * _gyroScale  / 128.0f;
+    _gyroBias[1]  = sum[4] * _gyroScale  / 128.0f;
+    _gyroBias[2]  = sum[5] * _gyroScale  / 128.0f;
 
     if(_accelBias[0] > 0.8f)  {_accelBias[0] -= 1.0f;}  // Remove gravity from the x-axis accelerometer bias calculation
     if(_accelBias[0] < -0.8f) {_accelBias[0] += 1.0f;}  // Remove gravity from the x-axis accelerometer bias calculation
