@@ -36,24 +36,21 @@ bool ICM42688::begin()
 {
     if(spidev->begin())
     {
+        m_firstTime_ICM42688 = true;
+        // set User Bank
         if(!setBank(0))
             return false;
         // ICM42688 reset
         if(!spidev->write(ICM42688reg::UB0_REG_DEVICE_CONFIG, 0x01, "Failed to reset IMU"))
             return false;
         spidev->delayMs(100);
-
         // ICM42688 connection check
         if(!who_i_am())
             return false;
         // enable Accel & Gyro sensor
         if(!spidev->write(ICM42688reg::UB0_REG_PWR_MGMT0, 0x0F, "Failed to set Power mode"))
             return false;
-        
         spidev->delayMs(100);
-
-        
-        m_firstTime_ICM42688 = true;
         // set UI filter
         setUIFilter();
         // set Low Pass Filter
@@ -317,7 +314,7 @@ bool ICM42688::IMURead()
         if(!spidev->write(ICM42688reg::UB0_REG_SIGNAL_PATH_RESET, 0x02, "Failed to FIFO buffer flush"))
             return false;
         // spidev->delayMs(50);
-        m_imuData.timestamp += m_sampleInterval * (2048  / _fifoFrameSize); // try to fix timestamp
+        // m_imuData.timestamp += m_sampleInterval * (2048  / _fifoFrameSize); // try to fix timestamp
         return false;
     }
 
@@ -326,7 +323,7 @@ bool ICM42688::IMURead()
         if(!spidev->read(ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to read FIFO data"))
             return false;
         count -= _fifoFrameSize;
-        m_imuData.timestamp += m_sampleInterval;
+        // m_imuData.timestamp += m_sampleInterval;
     }
 
     // FIFOの利用可能なbyte数がFIFOのFrameSize(16 byte)よりも少ない場合は、データのbyteがずれるおそれがあるため
@@ -353,7 +350,8 @@ bool ICM42688::IMURead()
     if (m_firstTime_ICM42688)
         m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
     else
-        m_imuData.timestamp += m_sampleInterval;
+        // m_imuData.timestamp += m_sampleInterval;
+        m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
 
     m_firstTime_ICM42688 = false;
 
@@ -374,7 +372,8 @@ bool ICM42688::IMURead()
 //     if (m_firstTime_ICM42688)
 //         m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
 //     else
-//         m_imuData.timestamp += m_sampleInterval;
+//         // m_imuData.timestamp += m_sampleInterval;
+//         m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
 
 //     m_firstTime_ICM42688 = false;
 

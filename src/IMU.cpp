@@ -25,8 +25,8 @@
 IMU::IMU()
 {
     // m_fusion = new FusionKalman4();
-    // m_fusion = new FusionRTQF();
-    m_fusion = new madwick();
+    m_fusion = new FusionRTQF();
+    // m_fusion = new madwick();
 }
 
 IMU::~IMU()
