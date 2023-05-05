@@ -414,19 +414,9 @@ bool ICM42688::offsetBias()
     if(!setGyroResolutionScale(dps250))
         return false;
 
-    static bool called_first_time = true;
-
     int16_t data[6] = {0, 0, 0, 0, 0, 0};
     int32_t sum[6] = {0, 0, 0, 0, 0, 0};
     
-    // IMUのデータ取得の際、最初に取得するデータはノイズが大きいため排除する
-    if(called_first_time)
-    {
-        readData(data);
-        spidev->delayMs(50);
-        called_first_time = false;
-    }
-
     for(int i = 0; i < 128; i++)
     {
         readData(data);
