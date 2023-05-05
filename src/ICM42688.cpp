@@ -41,13 +41,17 @@ bool ICM42688::begin()
         // ICM42688 reset
         if(!spidev->write(ICM42688reg::UB0_REG_DEVICE_CONFIG, 0x01, "Failed to reset IMU"))
             return false;
-        spidev->delayMs(10);
+        spidev->delayMs(100);
+
         // ICM42688 connection check
         if(!who_i_am())
             return false;
         // enable Accel & Gyro sensor
         if(!spidev->write(ICM42688reg::UB0_REG_PWR_MGMT0, 0x0F, "Failed to set Power mode"))
             return false;
+        
+        spidev->delayMs(100);
+
         
         m_firstTime_ICM42688 = true;
         // set UI filter
@@ -292,16 +296,6 @@ bool ICM42688::enableFifo(bool accel,bool gyro, bool temp)
     // Header(1) + accel(6) + gyro(6) + temp(1) + timestamp(2) 
     _fifoFrameSize = 1 + accel*6 + gyro*6 + temp*1 + 2;
 
-    static bool called_first_time = true;
-    int16_t data[6] = {0, 0, 0, 0, 0, 0};
-    // IMUのデータ取得の際、最初に取得するデータはノイズが大きいため排除する
-    if(called_first_time)
-    {
-        readData(data);
-        spidev->delayMs(50);
-        called_first_time = false;
-    }
-
     return true;
 }
 
@@ -448,9 +442,9 @@ bool ICM42688::offsetBias()
     _accelBias[0] = sum[0] * _accelScale / 128.0f;
     _accelBias[1] = sum[1] * _accelScale / 128.0f;
     _accelBias[2] = sum[2] * _accelScale / 128.0f;
-    _gyroBias[0]  = sum[3] * _gyroScale  / 128.0f;
-    _gyroBias[1]  = sum[4] * _gyroScale  / 128.0f;
-    _gyroBias[2]  = sum[5] * _gyroScale  / 128.0f;
+    _gyroBias[0] = sum[3] * _gyroScale / 128.0f;
+    _gyroBias[1] = sum[4] * _gyroScale / 128.0f;
+    _gyroBias[2] = sum[5] * _gyroScale / 128.0f;
 
     if(_accelBias[0] > 0.8f)  {_accelBias[0] -= 1.0f;}  // Remove gravity from the x-axis accelerometer bias calculation
     if(_accelBias[0] < -0.8f) {_accelBias[0] += 1.0f;}  // Remove gravity from the x-axis accelerometer bias calculation
