@@ -51,9 +51,9 @@ int main(void)
       std::cout << "gyro z = " << imu.getIMUData().gyro.z() * RAD_TO_DEGREE << std::endl;
       std::cout << "temperture = " << imu.getIMUData().temperature << std::endl;
       std::cout << "-------------------" << std::endl;
-      std::cout << "fusion vector x = " << imu.getIMUData().fusionPose.x() * RAD_TO_DEGREE << std::endl;
-      std::cout << "fusion vector y = " << imu.getIMUData().fusionPose.y() * RAD_TO_DEGREE << std::endl;
-      std::cout << "fusion vector z = " << imu.getIMUData().fusionPose.z() * RAD_TO_DEGREE << std::endl;
+      std::cout << "roll = " << imu.getIMUData().fusionPose.x() * RAD_TO_DEGREE << std::endl;
+      std::cout << "pitch = " << imu.getIMUData().fusionPose.y() * RAD_TO_DEGREE << std::endl;
+      std::cout << "yaw = " << imu.getIMUData().fusionPose.z() * RAD_TO_DEGREE << std::endl;
       std::cout << "fusion quaternion scalar = " << imu.getIMUData().fusionQPose.scalar() << std::endl;
       std::cout << "fusion quaternion x = " << imu.getIMUData().fusionQPose.x() << std::endl;
       std::cout << "fusion quaternion y = " << imu.getIMUData().fusionQPose.y() << std::endl;

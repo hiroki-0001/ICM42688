@@ -72,41 +72,6 @@ class Fusion
         std::uint64_t m_lastFusionTime;                              // for delta time calculation
         static const char *m_fusionNameMap[];                   // the fusion name array
 };
-
-class FusionKalman4 : public Fusion
-{
-    public:
-        FusionKalman4();
-        ~FusionKalman4();
-        //  reset() resets the kalman state but keeps any setting changes (such as enables)
-        void reset();
-        //  newIMUData() should be called for subsequent updates
-        //  deltaTime is in units of seconds
-        void newIMUData(IMU_DATA& data);
-    
-        void setQMatrix(Matrix4x4 Q) {  m_Q = Q; reset();}
-        void setRkMatrix(Matrix4x4 Rk) { m_Rk = Rk; reset();}
-    
-    private:
-        void predict();
-        void update();
-        
-        Vector3 m_gyro;										// unbiased gyro data
-        float m_timeDelta;                                    // time between predictions
-
-        Quaternion m_stateQ;									// quaternion state vector
-        Quaternion m_stateQError;                             // difference between stateQ and measuredQ
-
-        Matrix4x4 m_Kk;                                       // the Kalman gain matrix
-        Matrix4x4 m_Pkk_1;                                    // the predicted estimated covariance matrix
-        Matrix4x4 m_Pkk;                                      // the updated estimated covariance matrix
-        Matrix4x4 m_PDot;                                     // the derivative of the covariance matrix
-        Matrix4x4 m_Q;                                        // process noise covariance
-        Matrix4x4 m_Fk;                                       // the state transition matrix
-        Matrix4x4 m_FkTranspose;                              // the state transition matrix transposed
-        Matrix4x4 m_Rk;                                       // the measurement noise covariance
-};
-
 class FusionRTQF : public Fusion
 {  
     public:
@@ -126,24 +91,6 @@ class FusionRTQF : public Fusion
         Quaternion m_stateQ;									// quaternion state vector
         Quaternion m_stateQError;                             // difference between stateQ and measuredQ
         int m_sampleNumber;
-
-};
-
-class madwick : public Fusion
-{
-    public:      
-        madwick();
-        void newIMUData(IMU_DATA& data);
-        void reset(void);
-
-    private:
-        double q[4];					//! 推定したクオータニオンの値
-        double dt;						//! サンプリングタイム(s)
-        double gyroError;				//! 一秒間にジャイロセンサがずれる誤差(deg/s)
-        double beta;					//! チューニングのための定数
-        double roll;					//! ロールの値
-        double pitch;					//! ピッチの値
-        double yaw;						//! ヨーの値
 
 };
 
