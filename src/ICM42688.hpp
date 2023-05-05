@@ -101,7 +101,7 @@ public:
   bool setAccelOutputDataRate(ODR odr);
   bool setGyroOutputDataRate(ODR odr);
 
-  bool enableFifo(bool accel, bool gyro, bool temp);
+  bool enableFifo();
   bool IMURead();
   bool readData(int16_t *data);
 
@@ -130,14 +130,9 @@ public:
       static constexpr uint8_t WRITE_ADDR = 0x00;
       uint8_t _bank = 0;
       
-      static constexpr uint8_t FIFO_ACCEL = 0x01;
-      static constexpr uint8_t FIFO_GYRO = 0x02;
-      static constexpr uint8_t FIFO_TEMP = 0x04;
-
-      bool _enFifoAccel = false;
-      bool _enFifoGyro = false;
-      bool _enFifoTemp = false;
-
-      size_t _fifoFrameSize = 0;
+    // FIFO packet stracture
+    // FIFO の 中身の構造 前述したデータ14byteに加えて、FIFOの情報を示す Header (1 byte), timestamp(2 byte)が含まれる。
+    // Header(1) + accel(6) + gyro(6) + temp(1) + timestamp(2) 
+      size_t _fifoFrameSize = 16;
 };
 #endif // ICM42688_H

@@ -65,7 +65,7 @@ bool ICM42688::begin()
         // set sample rate [μ/sec]
         setSampleRate(230.7);
 
-        enableFifo(true, true, true);
+        enableFifo();
         setSlerpPower(0.02);
         setoffsetBias();
         
@@ -273,7 +273,7 @@ int ICM42688::IMUGetPollInterval()
         return (400 / m_sampleRate);
 }
 
-bool ICM42688::enableFifo(bool accel,bool gyro, bool temp)
+bool ICM42688::enableFifo()
 {
     //FIFOの有効化 0x40でStream-to-FIFO
     //Stream-to-FIFO = FIFO満タン時に追加の書き込みを行う。その際には最も古いデータが置き換わる
@@ -281,17 +281,8 @@ bool ICM42688::enableFifo(bool accel,bool gyro, bool temp)
         return false;
     // FIFOのbufferに入れるデータの選択
     //加速度x, y, z + ジャイロx, y, z + 温度 の 7つのデータを取得する。(byte数で換算すると 14 byte) 
-    if(!spidev->write(ICM42688reg::UB0_REG_FIFO_CONFIG1, (accel*FIFO_ACCEL)|(gyro*FIFO_GYRO)|(temp*FIFO_TEMP), "Failed to FIFO enable"))
+    if(!spidev->write(ICM42688reg::UB0_REG_FIFO_CONFIG1, 0x07, "Failed to FIFO enable"))
         return false;
-    
-    _enFifoAccel = accel;
-    _enFifoGyro = gyro;
-    _enFifoTemp = temp;
-
-    // FIFO packet stracture
-    // FIFO の 中身の構造 前述したデータ14byteに加えて、FIFOの情報を示す Header (1 byte), timestamp(2 byte)が含まれる。
-    // Header(1) + accel(6) + gyro(6) + temp(1) + timestamp(2) 
-    _fifoFrameSize = 1 + accel*6 + gyro*6 + temp*1 + 2;
 
     return true;
 }
@@ -338,14 +329,9 @@ bool ICM42688::IMURead()
     if(!spidev->read(ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to read fifo data"))
         return false;
 
-    if(_enFifoAccel)
-        Vector3::convertToVector(fifodata + 1, m_imuData.accel, _accelScale, _accelBias);
-
-    if(_enFifoGyro)
-        Vector3::convertToVector(fifodata + 7, m_imuData.gyro, _gyroScale, _gyroBias);
-
-    if(_enFifoTemp)
-        IMU::convertToTemperature(fifodata + 13);
+    Vector3::convertToVector(fifodata + 1, m_imuData.accel, _accelScale, _accelBias);
+    Vector3::convertToVector(fifodata + 7, m_imuData.gyro, _gyroScale, _gyroBias);
+    IMU::convertToTemperature(fifodata + 13);
 
     if (m_firstTime_ICM42688)
         m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
