@@ -106,7 +106,7 @@ public:
   bool readData(int16_t *data);
 
   bool offsetBias();
-  void setoffsetBias();
+  bool setoffsetBias();
 
   int IMUGetPollInterval();
 

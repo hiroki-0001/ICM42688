@@ -34,47 +34,69 @@ ICM42688::~ICM42688()
 
 bool ICM42688::begin()
 {
-    if(spidev->begin())
-    {
-        m_firstTime_ICM42688 = true;
-        // set User Bank
-        if(!setBank(0))
-            return false;
-        // ICM42688 reset
-        if(!spidev->write(ICM42688reg::UB0_REG_DEVICE_CONFIG, 0x01, "Failed to reset IMU"))
-            return false;
-        spidev->delayMs(100);
-        // ICM42688 connection check
-        if(!who_i_am())
-            return false;
-        // enable Accel & Gyro sensor
-        if(!spidev->write(ICM42688reg::UB0_REG_PWR_MGMT0, 0x0F, "Failed to set Power mode"))
-            return false;
-        spidev->delayMs(100);
-        // set UI filter
-        setUIFilter();
-        // set Low Pass Filter
-        setAccelLowPassFilter(lpf_1);
-        setGyroLowPassFilter(lpf_1);
-        // set Full Scale Range
-        setAccelResolutionScale(gpm8);
-        setGyroResolutionScale(dps2000);
-        // set Output Data Rate
-        setAccelOutputDataRate(odr1k);
-        setGyroOutputDataRate(odr1k);
-        // set sample rate [μ/sec]
-        setSampleRate(230.7);
-
-        enableFifo();
-        setSlerpPower(0.02);
-        setoffsetBias();
-        
-        return true;
-    }
-    else
-    {
+    if(!spidev->begin())
         return false;
-    }
+    
+    m_firstTime_ICM42688 = true;
+
+    // set User Bank
+    if(!setBank(0))
+        return false;
+
+    // ICM42688 reset
+    if(!spidev->write(ICM42688reg::UB0_REG_DEVICE_CONFIG, 0x01, "Failed to reset IMU"))
+        return false;
+    spidev->delayMs(100);
+
+    // ICM42688 connection check
+    if(!who_i_am())
+        return false;
+
+    // enable Accel & Gyro sensor
+    if(!spidev->write(ICM42688reg::UB0_REG_PWR_MGMT0, 0x0F, "Failed to set Power mode"))
+        return false;
+    spidev->delayMs(100);
+
+    // set UI filter
+    setUIFilter();
+
+    // set Low Pass Filter
+    if(!setAccelLowPassFilter(lpf_1))
+        return false;
+
+    if(!setGyroLowPassFilter(lpf_1))
+        return false;
+
+    // set Full Scale Range
+    if(!setAccelResolutionScale(gpm8))
+        return false;
+
+    if(!setGyroResolutionScale(dps2000))
+        return false;
+
+    // set Output Data Rate
+    if(!setAccelOutputDataRate(odr1k))
+        return false;
+
+    if(!setGyroOutputDataRate(odr1k))
+        return false;
+
+    // set sample rate [μ/sec]
+    if(!setSampleRate(230.7))
+        return false;
+
+    // set offset bias
+    if(!setoffsetBias())
+        return false;
+
+    // enable FIFO mode
+    if(!enableFifo())
+        return false;
+    
+    // a value 0 to 1 that controls measured state influence
+    setSlerpPower(0.02);
+    
+    return true;
 
 }
 
@@ -445,7 +467,7 @@ bool ICM42688::offsetBias()
     return true;
 }
 
-void ICM42688::setoffsetBias()
+bool ICM42688::setoffsetBias()
 {
   // offset bias
   float accBias[3] =
@@ -467,4 +489,6 @@ void ICM42688::setoffsetBias()
         _accelBias[i] = accBias[i];
         _gyroBias[i] = gyroBias[i];
     }
+
+    return true;
 }
