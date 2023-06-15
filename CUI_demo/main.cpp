@@ -20,10 +20,20 @@
 //  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 //  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include <unistd.h>
+#include <sched.h>
+#include <sys/resource.h>
 #include "ICM42688.hpp"
 
 int main(void)
 {
+  auto pid = getpid();
+  auto err = setpriority(PRIO_PROCESS, pid, -20);
+  if (err == -1)
+  {
+    std::cout << strerror(errno) << std::endl;
+  }
+
   ICM42688 imu;
   imu.begin();
 
@@ -36,14 +46,14 @@ int main(void)
       std::cout << "acc x = " << imu.getIMUData().accel.x() << std::endl;
       std::cout << "acc y = " << imu.getIMUData().accel.y() << std::endl;
       std::cout << "acc z = " << imu.getIMUData().accel.z() << std::endl;
-      std::cout << "gyro x = " << imu.getIMUData().gyro.x() << std::endl;
-      std::cout << "gyro y = " << imu.getIMUData().gyro.y() << std::endl;
-      std::cout << "gyro z = " << imu.getIMUData().gyro.z() << std::endl;
+      std::cout << "gyro x = " << imu.getIMUData().gyro.x() * RAD_TO_DEGREE << std::endl;
+      std::cout << "gyro y = " << imu.getIMUData().gyro.y() * RAD_TO_DEGREE << std::endl;
+      std::cout << "gyro z = " << imu.getIMUData().gyro.z() * RAD_TO_DEGREE << std::endl;
       std::cout << "temperture = " << imu.getIMUData().temperature << std::endl;
       std::cout << "-------------------" << std::endl;
-      std::cout << "fusion vector x = " << imu.getIMUData().fusionPose.x() << std::endl;
-      std::cout << "fusion vector y = " << imu.getIMUData().fusionPose.y() << std::endl;
-      std::cout << "fusion vector z = " << imu.getIMUData().fusionPose.z() << std::endl;
+      std::cout << "roll = " << imu.getIMUData().fusionPose.x() * RAD_TO_DEGREE << std::endl;
+      std::cout << "pitch = " << imu.getIMUData().fusionPose.y() * RAD_TO_DEGREE << std::endl;
+      std::cout << "yaw = " << imu.getIMUData().fusionPose.z() * RAD_TO_DEGREE << std::endl;
       std::cout << "fusion quaternion scalar = " << imu.getIMUData().fusionQPose.scalar() << std::endl;
       std::cout << "fusion quaternion x = " << imu.getIMUData().fusionQPose.x() << std::endl;
       std::cout << "fusion quaternion y = " << imu.getIMUData().fusionQPose.y() << std::endl;

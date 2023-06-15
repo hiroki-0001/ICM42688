@@ -110,192 +110,6 @@ void Fusion::calculatePose(const Vector3& accel)
 
 //----------------------------------------------------------
 //
-//  The FusionKalman4 class
-//
-//----------------------------------------------------------
-
-//  The QVALUE affects the gyro response.
-
-#define KALMAN_QVALUE	0.001f
-
-//  The RVALUE controls the influence of the accels and compass.
-//  The bigger the value, the more sluggish the response.
-#define KALMAN_RVALUE	0.0005f
-#define KALMAN_QUATERNION_LENGTH	4
-#define	KALMAN_STATE_LENGTH	4	// just the quaternion for the moment
-
-FusionKalman4::FusionKalman4()
-{
-    std::cout << "fusion type = Kalman4" << std::endl;
-    reset();
-}
-
-FusionKalman4::~FusionKalman4()
-{
-}
-
-void FusionKalman4::reset()
-{
-    m_fusionPose = Vector3();
-    m_fusionQPose.fromEuler(m_fusionPose);
-    m_gyro = Vector3();
-    m_accel = Vector3();
-    m_measuredPose = Vector3();
-    m_measuredQPose.fromEuler(m_measuredPose);
-    m_Rk.fill(0);
-    m_Q.fill(0);
-    // initialize process noise covariance matrix
-    for (int i = 0; i < KALMAN_STATE_LENGTH; i++)
-        for (int j = 0; j < KALMAN_STATE_LENGTH; j++)
-            m_Q.setVal(i, i, KALMAN_QVALUE);
-
-    // initialize observation noise covariance matrix
-    for (int i = 0; i < KALMAN_STATE_LENGTH; i++)
-        for (int j = 0; j < KALMAN_STATE_LENGTH; j++)
-            m_Rk.setVal(i, i, KALMAN_RVALUE);
-}
-
-void FusionKalman4::newIMUData(IMU_DATA& data)
-{
-    if (m_enableGyro)
-        m_gyro = data.gyro;
-    else
-        m_gyro = Vector3();
-    m_accel = data.accel;
-
-    if (m_firstTime_fusion)
-    {
-        m_lastFusionTime = data.timestamp;
-        calculatePose(m_accel);
-
-        m_Fk.fill(0);
-        //  init covariance matrix to something
-        m_Pkk.fill(0);
-        for (int i = 0; i < 4; i++)
-            for (int j = 0; j < 4; j++)
-                m_Pkk.setVal(i,j, 0.5);
-
-        // initialize the observation model Hk
-        // Note: since the model is the state vector, this is an identity matrix so it won't be used
-
-        //  initialize the poses
-        m_stateQ.fromEuler(m_measuredPose);
-        m_fusionQPose = m_stateQ;
-        m_fusionPose = m_measuredPose;
-        m_firstTime_fusion = false;
-    }
-    else
-    {
-        m_timeDelta = (float)(data.timestamp - m_lastFusionTime) / (float)1000000;
-        m_lastFusionTime = data.timestamp;
-        if (m_timeDelta <= 0)
-            return;
-
-        calculatePose(data.accel);
-        predict();
-        update();
-        m_stateQ.toEuler(m_fusionPose);
-        m_fusionQPose = m_stateQ;
-        data.fusionPose = m_fusionPose;
-        data.fusionQPose = m_fusionQPose;
-    }
-
-}
-
-void FusionKalman4::predict()
-{
-    Matrix4x4 mat;
-    Quaternion tQuat;
-    float x2, y2, z2;
-
-    //  compute the state transition matrix
-
-    x2 = m_gyro.x() / (float)2.0;
-    y2 = m_gyro.y() / (float)2.0;
-    z2 = m_gyro.z() / (float)2.0;
-
-    m_Fk.setVal(0, 1, -x2);
-    m_Fk.setVal(0, 2, -y2);
-    m_Fk.setVal(0, 3, -z2);
-
-    m_Fk.setVal(1, 0, x2);
-    m_Fk.setVal(1, 2, z2);
-    m_Fk.setVal(1, 3, -y2);
-
-    m_Fk.setVal(2, 0, y2);
-    m_Fk.setVal(2, 1, -z2);
-    m_Fk.setVal(2, 3, x2);
-
-    m_Fk.setVal(3, 0, z2);
-    m_Fk.setVal(3, 1, y2);
-    m_Fk.setVal(3, 2, -x2);
-
-    m_FkTranspose = m_Fk.transposed();
-
-    // Predict new state estimate Xkk_1 = Fk * Xk_1k_1
-
-    tQuat = m_Fk * m_stateQ;
-    tQuat *= m_timeDelta;
-    m_stateQ += tQuat;
-
-    //    m_stateQ.normalize();
-
-    // Compute PDot = Fk * Pk_1k_1 + Pk_1k_1 * FkTranspose (note Pkk == Pk_1k_1 at this stage)
-
-    m_PDot = m_Fk * m_Pkk;
-    mat = m_Pkk * m_FkTranspose;
-    m_PDot += mat;
-
-    // add in Q to get the new prediction
-
-    m_Pkk_1 = m_PDot + m_Q;
-
-    //  multiply by deltaTime (variable name is now misleading though)
-
-    m_Pkk_1 *= m_timeDelta;
-}
-
-void FusionKalman4::update()
-{
-    Quaternion delta;
-    Matrix4x4 Sk, SkInverse;
-
-    if (m_enableAccel) {
-        m_stateQError = m_measuredQPose - m_stateQ;
-    } else {
-        m_stateQError = Quaternion();
-    }
-
-    //	Compute residual covariance Sk = Hk * Pkk_1 * HkTranspose + Rk
-    //  Note: since Hk is the identity matrix, this has been simplified
-
-    Sk = m_Pkk_1 + m_Rk;
-
-    //	Compute Kalman gain Kk = Pkk_1 * HkTranspose * SkInverse
-    //  Note: again, the HkTranspose part is omitted
-
-    SkInverse = Sk.inverted();
-
-    m_Kk = m_Pkk_1 * SkInverse;
-
-    // make new state estimate
-
-    delta = m_Kk * m_stateQError;
-
-    m_stateQ += delta;
-
-    m_stateQ.normalize();
-
-    //  produce new estimate covariance Pkk = (I - Kk * Hk) * Pkk_1
-    //  Note: since Hk is the identity matrix, it is omitted
-
-    m_Pkk.setToIdentity();
-    m_Pkk -= m_Kk;
-    m_Pkk = m_Pkk * m_Pkk_1;
-}
-
-//----------------------------------------------------------
-//
 //  The FusionRTQF class
 //
 //----------------------------------------------------------
@@ -330,6 +144,7 @@ void FusionRTQF::reset()
         m_gyro = data.gyro;
     else
         m_gyro = Vector3();
+
     m_accel = data.accel;
 
     if (m_firstTime_fusion) {
@@ -360,8 +175,7 @@ void FusionRTQF::reset()
     data.fusionQPose = m_fusionQPose;
 }
 
-
- void FusionRTQF::predict()
+void FusionRTQF::predict()
 {
     float x2, y2, z2;
     float qs, qx, qy,qz;
@@ -385,14 +199,32 @@ void FusionRTQF::reset()
     m_stateQ.setY(qy + (y2 * qs - z2 * qx + x2 * qz) * m_timeDelta);
     m_stateQ.setZ(qz + (z2 * qs + y2 * qx - x2 * qy) * m_timeDelta);
     m_stateQ.normalize();
+
+    const double x = m_gyro.x() * m_timeDelta;
+    const double y = m_gyro.y() * m_timeDelta;
+    const double z = m_gyro.z() * m_timeDelta;
+    const double v = sqrt(x * x + y * y + z * z);
+    if (v > 1e-6) {
+        Quaternion dq(cos(v / 2), sin(v / 2) * x / v, sin(v / 2) * y / v, sin(v / 2) * z / v);
+        Quaternion Q2 = Quaternion(qs,qx,qy,qz) * dq;
+        //std::cout << "org: " << m_stateQ.scalar() << " " << m_stateQ.x() << std::endl;
+        //std::cout << "myn: " << Q2.scalar() << " " << Q2.x() << std::endl;
+        m_stateQ = Q2;
+    }
 }
 
 void FusionRTQF::update()
 {
-    if (m_enableAccel) {
+    const float x = m_accel.x();
+    const float y = m_accel.y();
+    const float z = m_accel.z();
+    const float norm = sqrt(x*x + y*y + z*z);
+    const bool accel_valid = 0.95 < norm && norm < 1.05;
+    const bool fall = fabs(x) > 0.5;
 
+    if (accel_valid && !fall && m_enableAccel) 
+    {
         // calculate rotation delta
-
         m_rotationDelta = m_stateQ.conjugate() * m_measuredQPose;
         m_rotationDelta.normalize();
 

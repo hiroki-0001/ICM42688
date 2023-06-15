@@ -59,7 +59,7 @@ class Vector3
         void zero();
         void normalize();
         float length();
-        static void convertToVector(unsigned char *rawData, Vector3& vec, float scale);
+        static void convertToVector(unsigned char *rawData, Vector3& vec, float scale, float *Bias);
 
         static float dotProduct(const Vector3& a, const Vector3& b);
         static void crossProduct(const Vector3& a, const Vector3& b, Vector3& d);

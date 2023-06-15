@@ -24,7 +24,6 @@
 
 IMU::IMU()
 {
-    // m_fusion = new FusionKalman4();
     m_fusion = new FusionRTQF();
 }
 

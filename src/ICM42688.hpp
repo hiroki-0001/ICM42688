@@ -73,16 +73,16 @@ public:
   };
   enum LPF : uint8_t
   {
-    lpf_1 = 0x00,  // ODR/2, (LN mode only)
-    lpf_2 = 0x01,  // LN mode : max(400Hz, ODR)/4, LP mode : 1x AVG filter (default)
-    lpf_3 = 0x02,  // max(400Hz, ODR)/5, (LN mode only)
-    lpf_4 = 0x03,  // max(400Hz, ODR)/8, (LN mode only)
-    lpf_5 = 0x04,  // max(400Hz, ODR)/10, (LN mode only)
-    lpf_6 = 0x05,  // max(400Hz, ODR)/16, (LN mode only)
-    lpf_7 = 0x06,  // max(400Hz, ODR)/20, (LN mode only)
-    lpf_8 = 0x07,  // max(400Hz, ODR)/40, (LN mode only)
-    lpf_9 = 0x0E,  // Low Latency option: Trivial decimation @ ODR of Dec2 filter output. Dec2 runs at max(400Hz, ODR)
-    lpf_10 = 0x0F, // Low Latency option: Trivial decimation @ ODR of Dec2 filter output. Dec2 runs at max(200Hz, 8*ODR)
+    lpf_0 = 0x00,  // ODR/2, (LN mode only)
+    lpf_1 = 0x01,  // LN mode : max(400Hz, ODR)/4, LP mode : 1x AVG filter (default)
+    lpf_2 = 0x02,  // max(400Hz, ODR)/5, (LN mode only)
+    lpf_3 = 0x03,  // max(400Hz, ODR)/8, (LN mode only)
+    lpf_4 = 0x04,  // max(400Hz, ODR)/10, (LN mode only)
+    lpf_5 = 0x05,  // max(400Hz, ODR)/16, (LN mode only)
+    lpf_6 = 0x06,  // max(400Hz, ODR)/20, (LN mode only)
+    lpf_7 = 0x07,  // max(400Hz, ODR)/40, (LN mode only)
+    lpf_14 = 0x0E,  // Low Latency option: Trivial decimation @ ODR of Dec2 filter output. Dec2 runs at max(400Hz, ODR)
+    lpf_15 = 0x0F, // Low Latency option: Trivial decimation @ ODR of Dec2 filter output. Dec2 runs at max(200Hz, 8*ODR)
   };
 
   ICM42688();
@@ -91,8 +91,9 @@ public:
   bool setSampleRate(int rate);
 
   bool begin();
-  int setBank(uint8_t bank);
+  bool setBank(uint8_t bank);
   bool who_i_am();
+  bool setUIFilter();
   bool setGyroLowPassFilter(LPF lpf);
   bool setAccelLowPassFilter(LPF lpf);
   bool setAccelResolutionScale(AccelFS fssel);
@@ -100,37 +101,38 @@ public:
   bool setAccelOutputDataRate(ODR odr);
   bool setGyroOutputDataRate(ODR odr);
 
-  bool enableFifo(bool accel, bool gyro, bool temp);
+  bool enableFifo();
   bool IMURead();
+  bool readData(int16_t *data);
+
+  bool offsetBias();
+  bool setoffsetBias();
 
   int IMUGetPollInterval();
 
-protected:
-  SPI *spidev;
-  float _accelScale = 0.0f;
-  float _gyroScale = 0.0f;
-  AccelFS _accelFS;
-  GyroFS _gyroFS;
-  uint8_t _buffer[12] = {};
-  // Constants
-  static constexpr uint8_t WHO_AM_I = 0x47;      ///< expected value in UB0_REG_WHO_AM_I reg
-  static constexpr int NUM_CALIB_SAMPLES = 1000; ///< for gyro/accel bias calib
-  static constexpr uint8_t READ_ADDR = 0x80;
-  static constexpr uint8_t WRITE_ADDR = 0x00;
-  uint8_t _bank = 0;
-  
-  static constexpr uint8_t FIFO_ACCEL = 0x01;
-  static constexpr uint8_t FIFO_GYRO = 0x02;
-  static constexpr uint8_t FIFO_TEMP = 0x04;
-
-  bool _enFifoAccel = false;
-  bool _enFifoGyro = false;
-  bool _enFifoTemp = false;
-
-  size_t _fifoSize = 0;
-  size_t _fifoFrameSize = 0;
-
   private:
       bool m_firstTime_ICM42688 = true;
+      SPI *spidev;
+      float _accelScale = 0.0f;
+      float _gyroScale = 0.0f;
+      AccelFS _accelFS;
+      GyroFS _gyroFS;
+      float _accelBias[3] = {0.0f, 0.0f, 0.0f};
+      float _gyroBias[3] = {0.0f, 0.0f, 0.0f};
+
+      // read data buffer For calibration
+      uint8_t _buffer[12] = {};
+      
+      // Constants
+      static constexpr uint8_t WHO_AM_I = 0x47;      ///< expected value in UB0_REG_WHO_AM_I reg
+      static constexpr int NUM_CALIB_SAMPLES = 1000; ///< for gyro/accel bias calib
+      static constexpr uint8_t READ_ADDR = 0x80;
+      static constexpr uint8_t WRITE_ADDR = 0x00;
+      uint8_t _bank = 0;
+      
+    // FIFO packet stracture
+    // FIFO の 中身の構造 前述したデータ14byteに加えて、FIFOの情報を示す Header (1 byte), timestamp(2 byte)が含まれる。
+    // Header(1) + accel(6) + gyro(6) + temp(1) + timestamp(2) 
+      size_t _fifoFrameSize = 16;
 };
 #endif // ICM42688_H
