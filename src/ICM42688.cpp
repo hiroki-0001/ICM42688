@@ -36,8 +36,6 @@ bool ICM42688::begin()
 {
     if(!spidev->begin())
         return false;
-    
-    m_firstTime_ICM42688 = true;
 
     // set User Bank
     if(!setBank(0))
@@ -71,14 +69,14 @@ bool ICM42688::begin()
     if(!setAccelResolutionScale(gpm8))
         return false;
 
-    if(!setGyroResolutionScale(dps2000))
+    if(!setGyroResolutionScale(dps1000))
         return false;
 
     // set Output Data Rate
-    if(!setAccelOutputDataRate(odr1k))
+    if(!setAccelOutputDataRate(odr200))
         return false;
 
-    if(!setGyroOutputDataRate(odr1k))
+    if(!setGyroOutputDataRate(odr200))
         return false;
 
     // set sample rate [μ/sec]
@@ -355,13 +353,7 @@ bool ICM42688::IMURead()
     Vector3::convertToVector(fifodata + 7, m_imuData.gyro, _gyroScale, _gyroBias);
     IMU::convertToTemperature(fifodata + 13);
 
-    if (m_firstTime_ICM42688)
-        m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
-    else
-        // m_imuData.timestamp += m_sampleInterval;
-        m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
-
-    m_firstTime_ICM42688 = false;
+    m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
 
     updateFusion();
 
@@ -472,16 +464,23 @@ bool ICM42688::setoffsetBias()
   // offset bias
   float accBias[3] =
   {
-    -8.86917e-05,
-    -0.021184,
-    0.0101852
-  };
+    // -8.86917e-05,
+    // -0.021184,
+    // 0.0101852
+    0.0114384,
+    -0.0202179,
+    0.00280571
+   };
 
   float gyroBias[3] = 
   {
-    -0.00566753,
-    -0.00247519,
-    -0.00345152
+    // -0.00566753,
+    // -0.00247519,
+    // -0.00345152
+    -0.0311553,
+    -0.0124852,
+    0.0306827
+
   };
 
     for(int i = 0; i < 3; i++)

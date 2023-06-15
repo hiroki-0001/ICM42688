@@ -111,7 +111,6 @@ public:
   int IMUGetPollInterval();
 
   private:
-      bool m_firstTime_ICM42688 = true;
       SPI *spidev;
       float _accelScale = 0.0f;
       float _gyroScale = 0.0f;
