@@ -43,7 +43,8 @@ public:
 
     void exitThread() { emit internalEndThread(); }
 
-    ICM42688 *getIMU() { return m_imu; }
+    Settings *getSettings() { return m_settings; }
+    IMU *getIMU() { return m_imu; }
 
 public slots:
     void internalRunLoop() { initThread(); emit running();}
@@ -65,7 +66,8 @@ protected:
 
 private:
     int m_timer;
-    ICM42688 *m_imu;
+    Settings *m_settings;
+    IMU *m_imu;
     QThread *m_thread;
 };
 

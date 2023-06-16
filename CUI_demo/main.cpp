@@ -34,32 +34,32 @@ int main(void)
     std::cout << strerror(errno) << std::endl;
   }
 
-  ICM42688 imu;
-  imu.begin();
+  Settings *m_settings = new Settings("ICM42688");
+  IMU *imu = IMU::createIMU(m_settings);
+  imu->IMUInit();
 
   // read the fifo buffer from the IMU
   while(1)
   {
-    if(imu.IMURead())
+    if(imu->IMURead())
     {
-      std::cout << "timestamp = " << imu.getIMUData().timestamp << std::endl;
-      std::cout << "acc x = " << imu.getIMUData().accel.x() << std::endl;
-      std::cout << "acc y = " << imu.getIMUData().accel.y() << std::endl;
-      std::cout << "acc z = " << imu.getIMUData().accel.z() << std::endl;
-      std::cout << "gyro x = " << imu.getIMUData().gyro.x() * RAD_TO_DEGREE << std::endl;
-      std::cout << "gyro y = " << imu.getIMUData().gyro.y() * RAD_TO_DEGREE << std::endl;
-      std::cout << "gyro z = " << imu.getIMUData().gyro.z() * RAD_TO_DEGREE << std::endl;
-      std::cout << "temperture = " << imu.getIMUData().temperature << std::endl;
+      std::cout << "timestamp = " << imu->getIMUData().timestamp << std::endl;
+      std::cout << "acc x = " << imu->getIMUData().accel.x() << std::endl;
+      std::cout << "acc y = " << imu->getIMUData().accel.y() << std::endl;
+      std::cout << "acc z = " << imu->getIMUData().accel.z() << std::endl;
+      std::cout << "gyro x = " << imu->getIMUData().gyro.x() * RAD_TO_DEGREE << std::endl;
+      std::cout << "gyro y = " << imu->getIMUData().gyro.y() * RAD_TO_DEGREE << std::endl;
+      std::cout << "gyro z = " << imu->getIMUData().gyro.z() * RAD_TO_DEGREE << std::endl;
+      std::cout << "temperture = " << imu->getIMUData().temperature << std::endl;
       std::cout << "-------------------" << std::endl;
-      std::cout << "roll = " << imu.getIMUData().fusionPose.x() * RAD_TO_DEGREE << std::endl;
-      std::cout << "pitch = " << imu.getIMUData().fusionPose.y() * RAD_TO_DEGREE << std::endl;
-      std::cout << "yaw = " << imu.getIMUData().fusionPose.z() * RAD_TO_DEGREE << std::endl;
-      std::cout << "fusion quaternion scalar = " << imu.getIMUData().fusionQPose.scalar() << std::endl;
-      std::cout << "fusion quaternion x = " << imu.getIMUData().fusionQPose.x() << std::endl;
-      std::cout << "fusion quaternion y = " << imu.getIMUData().fusionQPose.y() << std::endl;
-      std::cout << "fusion quaternion z = " << imu.getIMUData().fusionQPose.z() << std::endl;
+      std::cout << "roll = " << imu->getIMUData().fusionPose.x() * RAD_TO_DEGREE << std::endl;
+      std::cout << "pitch = " << imu->getIMUData().fusionPose.y() * RAD_TO_DEGREE << std::endl;
+      std::cout << "yaw = " << imu->getIMUData().fusionPose.z() * RAD_TO_DEGREE << std::endl;
+      std::cout << "fusion quaternion scalar = " << imu->getIMUData().fusionQPose.scalar() << std::endl;
+      std::cout << "fusion quaternion x = " << imu->getIMUData().fusionQPose.x() << std::endl;
+      std::cout << "fusion quaternion y = " << imu->getIMUData().fusionQPose.y() << std::endl;
+      std::cout << "fusion quaternion z = " << imu->getIMUData().fusionQPose.z() << std::endl;
       std::cout << std::endl;
-
       // std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
   }

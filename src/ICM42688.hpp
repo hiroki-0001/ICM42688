@@ -35,71 +35,21 @@
 class ICM42688 : public IMU
 {
 public:
-  enum GyroFS : uint8_t
-  {
-    dps2000 = 0x00,
-    dps1000 = 0x01,
-    dps500 = 0x02,
-    dps250 = 0x03,
-    dps125 = 0x04,
-    dps62_5 = 0x05,
-    dps31_25 = 0x06,
-    dps15_625 = 0x07
-  };
-  enum AccelFS : uint8_t
-  {
-    gpm16 = 0x00,
-    gpm8 = 0x01,
-    gpm4 = 0x02,
-    gpm2 = 0x03
-  };
-  enum ODR : uint8_t
-  {
-    odr32k = 0x01, // LN mode only
-    odr16k = 0x02, // LN mode only
-    odr8k = 0x03,  // LN mode only
-    odr4k = 0x04,  // LN mode only
-    odr2k = 0x05,  // LN mode only
-    odr1k = 0x06,  // LN mode only (Accel & Gyro default)
-    odr200 = 0x07,
-    odr100 = 0x08,
-    odr50 = 0x09,
-    odr25 = 0x0A,
-    odr12_5 = 0x0B,
-    odr6a25 = 0x0C,   // LP mode only (accel only)
-    odr3a125 = 0x0D,  // LP mode only (accel only)
-    odr1a5625 = 0x0E, // LP mode only (accel only)
-    odr500 = 0x0F,
-  };
-  enum LPF : uint8_t
-  {
-    lpf_0 = 0x00,  // ODR/2, (LN mode only)
-    lpf_1 = 0x01,  // LN mode : max(400Hz, ODR)/4, LP mode : 1x AVG filter (default)
-    lpf_2 = 0x02,  // max(400Hz, ODR)/5, (LN mode only)
-    lpf_3 = 0x03,  // max(400Hz, ODR)/8, (LN mode only)
-    lpf_4 = 0x04,  // max(400Hz, ODR)/10, (LN mode only)
-    lpf_5 = 0x05,  // max(400Hz, ODR)/16, (LN mode only)
-    lpf_6 = 0x06,  // max(400Hz, ODR)/20, (LN mode only)
-    lpf_7 = 0x07,  // max(400Hz, ODR)/40, (LN mode only)
-    lpf_14 = 0x0E,  // Low Latency option: Trivial decimation @ ODR of Dec2 filter output. Dec2 runs at max(400Hz, ODR)
-    lpf_15 = 0x0F, // Low Latency option: Trivial decimation @ ODR of Dec2 filter output. Dec2 runs at max(200Hz, 8*ODR)
-  };
-
-  ICM42688();
+  ICM42688(Settings *settings);
   ~ICM42688();
 
   bool setSampleRate(int rate);
 
-  bool begin();
+  bool IMUInit();
   bool setBank(uint8_t bank);
   bool who_i_am();
   bool setUIFilter();
-  bool setGyroLowPassFilter(LPF lpf);
-  bool setAccelLowPassFilter(LPF lpf);
-  bool setAccelResolutionScale(AccelFS fssel);
-  bool setGyroResolutionScale(GyroFS fssel);
-  bool setAccelOutputDataRate(ODR odr);
-  bool setGyroOutputDataRate(ODR odr);
+  bool setGyroLowPassFilter(uint8_t lpf);
+  bool setAccelLowPassFilter(uint8_t lpf);
+  bool setAccelResolutionScale(uint8_t fssel);
+  bool setGyroResolutionScale(uint8_t fssel);
+  bool setAccelOutputDataRate(uint8_t odr);
+  bool setGyroOutputDataRate(uint8_t odr);
 
   bool enableFifo();
   bool IMURead();
@@ -114,8 +64,8 @@ public:
       SPI *spidev;
       float _accelScale = 0.0f;
       float _gyroScale = 0.0f;
-      AccelFS _accelFS;
-      GyroFS _gyroFS;
+      uint8_t _accelFS;
+      uint8_t _gyroFS;
       float _accelBias[3] = {0.0f, 0.0f, 0.0f};
       float _gyroBias[3] = {0.0f, 0.0f, 0.0f};
 

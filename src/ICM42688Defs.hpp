@@ -25,6 +25,47 @@
 
 #include "IMUMath.hpp"
 
+  static constexpr uint8_t GYRO_FSR_2000 = 0x00;
+  static constexpr uint8_t GYRO_FSR_1000 = 0x01;
+  static constexpr uint8_t GYRO_FSR_500 = 0x02;
+  static constexpr uint8_t GYRO_FSR_250 = 0x03;
+  static constexpr uint8_t GYRO_FSR_125 = 0x04;
+  static constexpr uint8_t GYRO_FSR_62_5 = 0x05;
+  static constexpr uint8_t GYRO_FSR_31_25 = 0x06;
+  static constexpr uint8_t GYRO_FSR_15_625 = 0x07;
+
+  static constexpr uint8_t ACCEL_FSR_16 = 0x00;
+  static constexpr uint8_t ACCEL_FSR_8 = 0x01;
+  static constexpr uint8_t ACCEL_FSR_4 = 0x02;
+  static constexpr uint8_t ACCEL_FSR_2 = 0x03;
+
+  static constexpr uint8_t ODR_32K    = 0x01; // LN mode only
+  static constexpr uint8_t ODR_16K    = 0x02; // LN mode only
+  static constexpr uint8_t ODR_8K     = 0x03; // LN mode only
+  static constexpr uint8_t ODR_4K     = 0x04; // LN mode only
+  static constexpr uint8_t ODR_2K     = 0x05; // LN mode only
+  static constexpr uint8_t ODR_1K     = 0x06; // LN mode only  (Accel & Gyro default)
+  static constexpr uint8_t ODR_200    = 0x07;
+  static constexpr uint8_t ODR_100    = 0x08;
+  static constexpr uint8_t ODR_50     = 0x09;
+  static constexpr uint8_t ODR_25     = 0x0A;
+  static constexpr uint8_t ODR_12_5   = 0x0B;
+  static constexpr uint8_t ODR_6_25   = 0x0C; // LP mode only (accel only)
+  static constexpr uint8_t ODR_3_125  = 0x0D; // LP mode only (accel only)
+  static constexpr uint8_t ODR_1_5625 = 0x0E; // LP mode only (accel only)
+  static constexpr uint8_t ODR_500    = 0x0F;
+
+  static constexpr uint8_t LPF_0      = 0x00; // ODR/2, (LN mode only)
+  static constexpr uint8_t LPF_1      = 0x01; // LN mode : max(400Hz, ODR)/4, LP mode : 1x AVG filter (default)
+  static constexpr uint8_t LPF_2      = 0x02; // max(400Hz, ODR)/5, (LN mode only)
+  static constexpr uint8_t LPF_3      = 0x03; // max(400Hz, ODR)/8, (LN mode only)
+  static constexpr uint8_t LPF_4      = 0x04; // max(400Hz, ODR)/10, (LN mode only)
+  static constexpr uint8_t LPF_5      = 0x05; // max(400Hz, ODR)/16, (LN mode only)
+  static constexpr uint8_t LPF_6      = 0x06; // max(400Hz, ODR)/20, (LN mode only)
+  static constexpr uint8_t LPF_7      = 0x07; // max(400Hz, ODR)/40, (LN mode only)
+  static constexpr uint8_t LPF_14     = 0x0E; // Low Latency option: Trivial decimation @ ODR of Dec2 filter output. Dec2 runs at max(400Hz, ODR)
+  static constexpr uint8_t LPF_15     = 0x0F; // Low Latency option: Trivial decimation @ ODR of Dec2 filter output. Dec2 runs at max(200Hz, 8*ODR)
+
 typedef struct
 {
     uint64_t timestamp = 0;

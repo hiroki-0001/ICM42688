@@ -22,7 +22,7 @@
 
 #include "ICM42688.hpp"
 
-ICM42688::ICM42688()
+ICM42688::ICM42688(Settings *settings) : IMU(settings)
 {
     spidev = new SPI("/dev/spidev0.0");
 }
@@ -32,7 +32,7 @@ ICM42688::~ICM42688()
     delete spidev;
 }
 
-bool ICM42688::begin()
+bool ICM42688::IMUInit()
 {
     if(!spidev->begin())
         return false;
@@ -59,24 +59,24 @@ bool ICM42688::begin()
     setUIFilter();
 
     // set Low Pass Filter
-    if(!setAccelLowPassFilter(lpf_1))
+    if(!setAccelLowPassFilter(m_settings->m_ICM42688AccelLPF))
         return false;
 
-    if(!setGyroLowPassFilter(lpf_1))
+    if(!setGyroLowPassFilter(m_settings->m_ICM42688GyroLPF))
         return false;
 
     // set Full Scale Range
-    if(!setAccelResolutionScale(gpm8))
+    if(!setAccelResolutionScale(m_settings->m_ICM42688AccelFSR))
         return false;
 
-    if(!setGyroResolutionScale(dps1000))
+    if(!setGyroResolutionScale(m_settings->m_ICM42688GyroFSR))
         return false;
 
     // set Output Data Rate
-    if(!setAccelOutputDataRate(odr200))
+    if(!setAccelOutputDataRate(m_settings->m_ICM42688AccelODR))
         return false;
 
-    if(!setGyroOutputDataRate(odr200))
+    if(!setGyroOutputDataRate(m_settings->m_ICM42688GyroODR))
         return false;
 
     // set sample rate [μ/sec]
@@ -153,7 +153,7 @@ bool ICM42688::setUIFilter()
     return true;
 }
 
-bool ICM42688::setAccelLowPassFilter(LPF lpf)
+bool ICM42688::setAccelLowPassFilter(uint8_t lpf)
 {
     uint8_t reg;
     if(!spidev->read(ICM42688reg::UB0_REG_GYRO_ACCEL_CONFIG0, 1, &reg, "Failed to set Accel Low-Pass Filter"))
@@ -164,10 +164,12 @@ bool ICM42688::setAccelLowPassFilter(LPF lpf)
     if(!spidev->write(ICM42688reg::UB0_REG_GYRO_ACCEL_CONFIG0, reg, "Failed to set Accel Low-Pass Filter"))
         return false;
 
+    std::cout << "Accel low pass filter = " << std::bitset<8>(reg) << std::endl;
+
     return true;
 }
 
-bool ICM42688::setGyroLowPassFilter(LPF lpf)
+bool ICM42688::setGyroLowPassFilter(uint8_t lpf)
 {
     uint8_t reg;
     if(!spidev->read(ICM42688reg::UB0_REG_GYRO_ACCEL_CONFIG0, 1, &reg, "Failed to set Accel Low-Pass Filter"))
@@ -178,23 +180,25 @@ bool ICM42688::setGyroLowPassFilter(LPF lpf)
     if(!spidev->write(ICM42688reg::UB0_REG_GYRO_ACCEL_CONFIG0, reg, "Failed to set Accel Low-Pass Filter"))
         return false;
 
+    std::cout << "Gyro low pass filter = " << std::bitset<8>(reg) << std::endl;
+
     return true;
 }
 
-bool ICM42688::setAccelResolutionScale(AccelFS fssel)
+bool ICM42688::setAccelResolutionScale(uint8_t fssel)
 {
     switch (fssel)
     {
-    case gpm16:
+    case ACCEL_FSR_16:
         _accelScale = 1.0/2048.0;
         break;
-    case gpm8:
+    case ACCEL_FSR_8:
         _accelScale = 1.0/4096.0;
         break;
-    case gpm4:
+    case ACCEL_FSR_4:
         _accelScale = 1.0/8192.0;
         break;
-    case gpm2:
+    case ACCEL_FSR_2:
         _accelScale = 1.0/16384.0;
         break;    
     default:
@@ -210,36 +214,39 @@ bool ICM42688::setAccelResolutionScale(AccelFS fssel)
     if(!spidev->write(ICM42688reg::UB0_REG_ACCEL_CONFIG0, reg, "Failed to set Accel Resolution Scale"))
         return false;
 
+    std::cout << "Accel FSR = " << std::bitset<8>(reg) << std::endl;
+    
+
     _accelFS = fssel;
 
     return true;
 }
-bool ICM42688::setGyroResolutionScale(GyroFS fssel)
+bool ICM42688::setGyroResolutionScale(uint8_t fssel)
 {
     switch(fssel)
     {
-        case dps2000:
+        case GYRO_FSR_2000:
             _gyroScale = M_PI / (16.4 * 180.0);
             break;
-        case dps1000:
+        case GYRO_FSR_1000:
             _gyroScale = M_PI / (32.8 * 180.0);
             break;
-        case dps500:
+        case GYRO_FSR_500:
             _gyroScale = M_PI / (62.5 * 180.0);
             break;
-        case dps250:
+        case GYRO_FSR_250:
             _gyroScale = M_PI / (131.0 * 180.0);
             break;
-        case dps125:
+        case GYRO_FSR_125:
             _gyroScale = M_PI / (262.1 * 180.0);
             break;
-        case dps62_5:
+        case GYRO_FSR_62_5:
             _gyroScale = M_PI / (524.3 * 180.0);
             break;
-        case dps31_25:
+        case GYRO_FSR_31_25:
             _gyroScale = M_PI / (1048.6 * 180.0);
             break;
-        case dps15_625:
+        case GYRO_FSR_15_625:
             _gyroScale = M_PI / (2097.2 * 180.0);
             break;
         default:
@@ -255,12 +262,14 @@ bool ICM42688::setGyroResolutionScale(GyroFS fssel)
     if(!spidev->write(ICM42688reg::UB0_REG_GYRO_CONFIG0, reg, "Failed to set Gyro Resolution Scale"))
         return false;
     
+    std::cout << "Gyro FSR = " << std::bitset<8>(reg) << std::endl;
+
     _gyroFS = fssel;
     
     return true;
 }
 
-bool ICM42688::setAccelOutputDataRate(ODR odr)
+bool ICM42688::setAccelOutputDataRate(uint8_t odr)
 {
     uint8_t reg = 0;
     if(!spidev -> read(ICM42688reg::UB0_REG_ACCEL_CONFIG0,  1, &reg, "Failed to read Accel Output Data Rate"))
@@ -269,10 +278,12 @@ bool ICM42688::setAccelOutputDataRate(ODR odr)
     reg = odr | (reg & 0xF0);
     if(!spidev->write(ICM42688reg::UB0_REG_ACCEL_CONFIG0, reg, "Failed to set Accel Output Data Rate"))
         return false;
+    
+    std::cout << "Accel ODR = " << std::bitset<8>(reg) << std::endl;
 
     return true;
 }
-bool ICM42688::setGyroOutputDataRate(ODR odr)
+bool ICM42688::setGyroOutputDataRate(uint8_t odr)
 {
     uint8_t reg = 0;
     if(!spidev -> read(ICM42688reg::UB0_REG_GYRO_CONFIG0,  1, &reg, "Failed to read Gyro Output Data Rate"))
@@ -281,6 +292,8 @@ bool ICM42688::setGyroOutputDataRate(ODR odr)
     reg = odr | (reg & 0xF0);
     if(!spidev->write(ICM42688reg::UB0_REG_GYRO_CONFIG0, reg, "Failed to set Gyro Output Data Rate"))
         return false;
+
+    std::cout << "Gyro ODR = " << std::bitset<8>(reg) << std::endl;
 
     return true;
 }
@@ -404,13 +417,13 @@ bool ICM42688::offsetBias()
 {   
     std::cout << "calibration start !!" << std::endl;
     //キャリブレーション中はIMUを動かさないので、分解能を高く設定する
-    const AccelFS accel_current_fssel = _accelFS;
-    const GyroFS gyro_current_fssel = _gyroFS;
+    const uint8_t accel_current_fssel = _accelFS;
+    const uint8_t gyro_current_fssel = _gyroFS;
     
-    if(!setAccelResolutionScale(gpm2))
+    if(!setAccelResolutionScale(ACCEL_FSR_2))
         return false;
     
-    if(!setGyroResolutionScale(dps250))
+    if(!setGyroResolutionScale(GYRO_FSR_250))
         return false;
 
     int16_t data[6] = {0, 0, 0, 0, 0, 0};

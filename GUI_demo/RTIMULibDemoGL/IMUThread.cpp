@@ -26,6 +26,7 @@
 IMUThread::IMUThread() : QObject()
 {
     m_imu = NULL;
+    m_settings = new Settings();
     m_timer = -1;
 }
 
@@ -45,14 +46,14 @@ void IMUThread::newIMU()
         m_timer = -1;
     }
 
-    m_imu = new ICM42688;
+    m_imu = IMU::createIMU(m_settings);
 
     if (m_imu == NULL)
         return;
 
     //  set up IMU
 
-    m_imu->begin();
+    m_imu->IMUInit();
     m_timer = startTimer(m_imu->IMUGetPollInterval());
 }
 
@@ -61,14 +62,14 @@ void IMUThread::initThread()
     //  create IMU. There's a special function call for this
     //  as it makes sure that the required one is created as specified in the settings.
 
-    m_imu = new ICM42688;
+    m_imu = IMU::createIMU(m_settings);
 
     if (m_imu == NULL) {
         qDebug() << "No IMU found.";
         return;
     }
     //  set up IMU
-    m_imu->begin();
+    m_imu->IMUInit();
 
     //  poll at the rate suggested bu the IMU
 
@@ -90,6 +91,8 @@ void IMUThread::finishThread()
         delete m_imu;
 
     m_imu = NULL;
+    delete m_settings;
+
 }
 
 void IMUThread::timerEvent(QTimerEvent * /* event */)

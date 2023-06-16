@@ -24,12 +24,17 @@
 #define	_IMU_H
 
 #include "Fusion.hpp"
+#include "Settings.hpp"
 
 class IMU
 {
     public:
-        IMU();
+        static IMU *createIMU(Settings *settings);
+
+        IMU(Settings *settings);
         virtual ~IMU();
+
+        virtual bool IMUInit() = 0;
 
         void setSlerpPower(float power) { m_fusion->setSlerpPower(power); }        
         //  call the following to reset the fusion algorithm
@@ -60,6 +65,8 @@ class IMU
         void updateFusion();                                    // call when new data to update fusion state
         uint64_t m_sampleInterval = 0;                              // interval between samples in microseonds
         int m_sampleRate = 0;      
+
+        Settings *m_settings;
 };
 
 #endif // _IMU_H

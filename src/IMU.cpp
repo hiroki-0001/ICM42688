@@ -21,9 +21,16 @@
 //  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "IMU.hpp"
+#include "ICM42688.hpp"
 
-IMU::IMU()
+IMU *IMU::createIMU(Settings *settings)
 {
+    return new ICM42688(settings);
+}
+
+IMU::IMU(Settings *settings)
+{
+    m_settings = settings;
     m_fusion = new FusionRTQF();
 }
 
