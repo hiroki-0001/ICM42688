@@ -200,17 +200,18 @@ void FusionRTQF::predict()
     m_stateQ.setZ(qz + (z2 * qs + y2 * qx - x2 * qy) * m_timeDelta);
     m_stateQ.normalize();
 
-    const double x = m_gyro.x() * m_timeDelta;
-    const double y = m_gyro.y() * m_timeDelta;
-    const double z = m_gyro.z() * m_timeDelta;
-    const double v = sqrt(x * x + y * y + z * z);
-    if (v > 1e-6) {
-        Quaternion dq(cos(v / 2), sin(v / 2) * x / v, sin(v / 2) * y / v, sin(v / 2) * z / v);
-        Quaternion Q2 = Quaternion(qs,qx,qy,qz) * dq;
-        //std::cout << "org: " << m_stateQ.scalar() << " " << m_stateQ.x() << std::endl;
-        //std::cout << "myn: " << Q2.scalar() << " " << Q2.x() << std::endl;
-        m_stateQ = Q2;
-    }
+    // const double x = m_gyro.x() * m_timeDelta;
+    // const double y = m_gyro.y() * m_timeDelta;
+    // const double z = m_gyro.z() * m_timeDelta;
+    // const double v = sqrt(x * x + y * y + z * z);
+    // if (v > 1e-6) {
+    //     Quaternion dq(cos(v / 2), sin(v / 2) * x / v, sin(v / 2) * y / v, sin(v / 2) * z / v);
+    //     Quaternion Q2 = Quaternion(qs,qx,qy,qz) * dq;
+    //     //std::cout << "org: " << m_stateQ.scalar() << " " << m_stateQ.x() << std::endl;
+    //     //std::cout << "myn: " << Q2.scalar() << " " << Q2.x() << std::endl;
+    //     m_stateQ = Q2;
+    // }
+    
 }
 
 void FusionRTQF::update()
