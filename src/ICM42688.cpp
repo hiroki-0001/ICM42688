@@ -89,9 +89,6 @@ bool ICM42688::IMUInit()
 
     gyroBiasInit();
     
-    // a value 0 to 1 that controls measured state influence
-    setSlerpPower(0.02);
-    
     return true;
 
 }

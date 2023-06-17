@@ -37,6 +37,7 @@ int main(void)
   Settings *m_settings = new Settings("ICM42688");
   IMU *imu = IMU::createIMU(m_settings);
   imu->IMUInit();
+  imu->setSlerpPower(0.2);
 
   // read the fifo buffer from the IMU
   while(1)

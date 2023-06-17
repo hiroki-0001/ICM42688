@@ -54,6 +54,8 @@ void IMUThread::newIMU()
     //  set up IMU
 
     m_imu->IMUInit();
+    m_imu->setSlerpPower(0.2);
+
     m_timer = startTimer(m_imu->IMUGetPollInterval());
 }
 
@@ -70,6 +72,8 @@ void IMUThread::initThread()
     }
     //  set up IMU
     m_imu->IMUInit();
+    m_imu->setSlerpPower(0.2);
+
 
     //  poll at the rate suggested bu the IMU
 
