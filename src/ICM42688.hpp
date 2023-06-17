@@ -55,9 +55,6 @@ public:
   bool IMURead();
   bool readData(int16_t *data);
 
-  bool offsetBias();
-  bool setoffsetBias();
-
   int IMUGetPollInterval();
 
   private:

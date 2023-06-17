@@ -26,6 +26,11 @@
 #include "Fusion.hpp"
 #include "Settings.hpp"
 
+//  this defines the accelerometer noise level
+#define RTIMU_FUZZY_GYRO_ZERO      0.20
+//  this defines the accelerometer noise level
+#define RTIMU_FUZZY_ACCEL_ZERO      0.05
+
 class IMU
 {
     public:
@@ -59,14 +64,24 @@ class IMU
 
 
     protected:
-        static char m_string[1000];
-        IMU_DATA m_imuData;                                   // the data from the IMU
-        Fusion *m_fusion;     
+        void gyroBiasInit();                                    // sets up gyro bias calculation
+        void handleGyroBias();                                  // adjust gyro for bias
+        
         void updateFusion();                                    // call when new data to update fusion state
+
+        IMU_DATA m_imuData;             // the data from the IMU
+        Fusion *m_fusion;               // the fusion algorithm
+        Settings *m_settings;           // the settings object pointer
+
         uint64_t m_sampleInterval = 0;                              // interval between samples in microseonds
         int m_sampleRate = 0;      
 
-        Settings *m_settings;
+        float m_gyroLearningAlpha;                            // gyro bias rapid learning rate
+        float m_gyroContinuousAlpha;                          // gyro bias continuous (slow) learning rate
+        int m_gyroSampleCount;                                  // number of gyro samples used    
+        Vector3 m_previousAccel;                              // previous step accel for gyro learning
+
+
 };
 
 #endif // _IMU_H

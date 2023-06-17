@@ -165,18 +165,13 @@ bool Settings::saveSettings()
 
     setComment("#####################################################################");
     setComment("");
-    setComment("RTIMULib settings file");
-    setBlank();
-    setComment("General settings");
+    setComment("IMU settings file");
     setComment("");
 
     //  Accel calibration settings
 
-    setBlank();
     setComment("#####################################################################");
     setComment("");
-
-    setBlank();
     setComment("Accel calibration");
     setValue(ACCELCAL_VALID, m_accelCalValid);
     setValue(ACCELCAL_MINX, m_accelCalMin.x());
@@ -191,8 +186,6 @@ bool Settings::saveSettings()
     setBlank();
     setComment("#####################################################################");
     setComment("");
-
-    setBlank();
     setComment("Saved gyro bias data");
     setValue(GYRO_BIAS_VALID, m_gyroBiasValid);
     setValue(GYRO_BIAS_X, m_gyroBias.x());
@@ -206,6 +199,7 @@ bool Settings::saveSettings()
     setComment("");
     setComment("ICM42688 settings");
     setComment("");
+    setComment("#####################################################################");
 
     setBlank();
     setComment("");

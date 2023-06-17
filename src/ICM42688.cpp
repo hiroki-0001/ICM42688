@@ -83,13 +83,11 @@ bool ICM42688::IMUInit()
     if(!setSampleRate(230.7))
         return false;
 
-    // set offset bias
-    if(!setoffsetBias())
-        return false;
-
     // enable FIFO mode
     if(!enableFifo())
         return false;
+
+    gyroBiasInit();
     
     // a value 0 to 1 that controls measured state influence
     setSlerpPower(0.02);
@@ -362,145 +360,16 @@ bool ICM42688::IMURead()
     if(!spidev->read(ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to read fifo data"))
         return false;
 
-    Vector3::convertToVector(fifodata + 1, m_imuData.accel, _accelScale, _accelBias);
-    Vector3::convertToVector(fifodata + 7, m_imuData.gyro, _gyroScale, _gyroBias);
+    Vector3::convertToVector(fifodata + 1, m_imuData.accel, _accelScale);
+    Vector3::convertToVector(fifodata + 7, m_imuData.gyro, _gyroScale);
     IMU::convertToTemperature(fifodata + 13);
+
+    handleGyroBias();
+
 
     m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
 
     updateFusion();
-
-    return true;
-}
-
-// bool ICM42688::IMURead()
-// {
-//     uint8_t count = 12;
-//     if(!spidev->read(ICM42688reg::UB0_REG_ACCEL_DATA_X1, count, _buffer, "error"))
-//         return false;
-
-//     Vector3::convertToVector(_buffer, m_imuData.accel, _accelScale, _accelBias);
-//     Vector3::convertToVector(_buffer + 6, m_imuData.gyro, _gyroScale, _gyroBias);
-
-//     if (m_firstTime_ICM42688)
-//         m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
-//     else
-//         // m_imuData.timestamp += m_sampleInterval;
-//         m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
-
-//     m_firstTime_ICM42688 = false;
-
-//     updateFusion();
-
-//     return true;
-// }
-
-// FIFOなしで加速度・ジャイロの値を取得するときに使用。
-// calibration用に使用する
-
-bool ICM42688::readData(int16_t *data)
-{
-    if(!spidev->read(ICM42688reg::UB0_REG_ACCEL_DATA_X1, 12, _buffer, "Failed to read data of accel & gyro"))
-        return false;
-
-    data[0] = (uint16_t)_buffer[0] << 8 | _buffer[1];
-    data[1] = (uint16_t)_buffer[2] << 8 | _buffer[3];
-    data[2] = (uint16_t)_buffer[4] << 8 | _buffer[5];
-    data[3] = (uint16_t)_buffer[6] << 8 | _buffer[7];
-    data[4] = (uint16_t)_buffer[8] << 8 | _buffer[9];
-    data[5] = (uint16_t)_buffer[10] << 8 | _buffer[11];
-
-    return true;
-}
-
-bool ICM42688::offsetBias()
-{   
-    std::cout << "calibration start !!" << std::endl;
-    //キャリブレーション中はIMUを動かさないので、分解能を高く設定する
-    const uint8_t accel_current_fssel = _accelFS;
-    const uint8_t gyro_current_fssel = _gyroFS;
-    
-    if(!setAccelResolutionScale(ACCEL_FSR_2))
-        return false;
-    
-    if(!setGyroResolutionScale(GYRO_FSR_250))
-        return false;
-
-    int16_t data[6] = {0, 0, 0, 0, 0, 0};
-    int32_t sum[6] = {0, 0, 0, 0, 0, 0};
-    
-    for(int i = 0; i < 128; i++)
-    {
-        readData(data);
-        sum[0] += data[0];
-        sum[1] += data[1];
-        sum[2] += data[2];
-        sum[3] += data[3];
-        sum[4] += data[4];
-        sum[5] += data[5];
-        spidev->delayMs(50);
-    }
-
-    _accelBias[0] = sum[0] * _accelScale / 128.0f;
-    _accelBias[1] = sum[1] * _accelScale / 128.0f;
-    _accelBias[2] = sum[2] * _accelScale / 128.0f;
-    _gyroBias[0] = sum[3] * _gyroScale / 128.0f;
-    _gyroBias[1] = sum[4] * _gyroScale / 128.0f;
-    _gyroBias[2] = sum[5] * _gyroScale / 128.0f;
-
-    if(_accelBias[0] > 0.8f)  {_accelBias[0] -= 1.0f;}  // Remove gravity from the x-axis accelerometer bias calculation
-    if(_accelBias[0] < -0.8f) {_accelBias[0] += 1.0f;}  // Remove gravity from the x-axis accelerometer bias calculation
-    if(_accelBias[1] > 0.8f)  {_accelBias[1] -= 1.0f;}  // Remove gravity from the y-axis accelerometer bias calculation
-    if(_accelBias[1] < -0.8f) {_accelBias[1] += 1.0f;}  // Remove gravity from the y-axis accelerometer bias calculation
-    if(_accelBias[2] > 0.8f)  {_accelBias[2] -= 1.0f;}  // Remove gravity from the z-axis accelerometer bias calculation
-    if(_accelBias[2] < -0.8f) {_accelBias[2] += 1.0f;}  // Remove gravity from the z-axis accelerometer bias calculation
-
-    std::cout << " acc x bias = " <<  _accelBias[0] << std::endl;
-    std::cout << " acc y bias = " <<  _accelBias[1] << std::endl;
-    std::cout << " acc z bias = " <<  _accelBias[2] << std::endl;
-    std::cout << " gyro x bias = " <<  _gyroBias[0] << std::endl;
-    std::cout << " gyro y bias = " <<  _gyroBias[1] << std::endl;
-    std::cout << " gyro z bias = " <<  _gyroBias[2] << std::endl;
-
-    // recover the full scale setting
-    if(!setAccelResolutionScale(accel_current_fssel))
-        return false;
-
-    if(!setGyroResolutionScale(gyro_current_fssel))
-        return false;
-    
-    return true;
-}
-
-bool ICM42688::setoffsetBias()
-{
-  // offset bias
-  float accBias[3] =
-  {
-    // -8.86917e-05,
-    // -0.021184,
-    // 0.0101852
-    0.0114384,
-    -0.0202179,
-    0.00280571
-   };
-
-  float gyroBias[3] = 
-  {
-    // -0.00566753,
-    // -0.00247519,
-    // -0.00345152
-    -0.0311553,
-    -0.0124852,
-    0.0306827
-
-  };
-
-    for(int i = 0; i < 3; i++)
-    {
-        _accelBias[i] = accBias[i];
-        _gyroBias[i] = gyroBias[i];
-    }
 
     return true;
 }
