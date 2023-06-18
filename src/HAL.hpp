@@ -34,29 +34,29 @@
 #include <string.h>
 #include <stdlib.h>
 
-// #define HAL_INFO(m) { printf("%s", m); fflush(stdout); }
-// #define HAL_INFO1(m, x) { printf(m, x); fflush(stdout); }
-// #define HAL_INFO2(m, x, y) { printf(m, x, y); fflush(stdout); }
-// #define HAL_INFO3(m, x, y, z) { printf(m, x, y, z); fflush(stdout); }
-// #define HAL_INFO4(m, x, y, z, a) { printf(m, x, y, z, a); fflush(stdout); }
-// #define HAL_INFO5(m, x, y, z, a, b) { printf(m, x, y, z, a, b); fflush(stdout); }
-// #define HAL_ERROR(m)    fprintf(stderr, m);
-// #define HAL_ERROR1(m, x)    fprintf(stderr, m, x);
-// #define HAL_ERROR2(m, x, y)    fprintf(stderr, m, x, y);
-// #define HAL_ERROR3(m, x, y, z)    fprintf(stderr, m, x, y, z);
-// #define HAL_ERROR4(m, x, y, z, a)    fprintf(stderr, m, x, y, z, a);
+#define HAL_INFO(m) { printf("%s", m); fflush(stdout); }
+#define HAL_INFO1(m, x) { printf(m, x); fflush(stdout); }
+#define HAL_INFO2(m, x, y) { printf(m, x, y); fflush(stdout); }
+#define HAL_INFO3(m, x, y, z) { printf(m, x, y, z); fflush(stdout); }
+#define HAL_INFO4(m, x, y, z, a) { printf(m, x, y, z, a); fflush(stdout); }
+#define HAL_INFO5(m, x, y, z, a, b) { printf(m, x, y, z, a, b); fflush(stdout); }
+#define HAL_ERROR(m)    fprintf(stderr, m);
+#define HAL_ERROR1(m, x)    fprintf(stderr, m, x);
+#define HAL_ERROR2(m, x, y)    fprintf(stderr, m, x, y);
+#define HAL_ERROR3(m, x, y, z)    fprintf(stderr, m, x, y, z);
+#define HAL_ERROR4(m, x, y, z, a)    fprintf(stderr, m, x, y, z, a);
 
-#define HAL_INFO(m)
-#define HAL_INFO1(m, x)
-#define HAL_INFO2(m, x, y)
-#define HAL_INFO3(m, x, y, z)
-#define HAL_INFO4(m, x, y, z, a)
-#define HAL_INFO5(m, x, y, z, a, b)
-#define HAL_ERROR(m)
-#define HAL_ERROR1(m, x)
-#define HAL_ERROR2(m, x, y)
-#define HAL_ERROR3(m, x, y, z)
-#define HAL_ERROR4(m, x, y, z, a)
+// #define HAL_INFO(m)
+// #define HAL_INFO1(m, x)
+// #define HAL_INFO2(m, x, y)
+// #define HAL_INFO3(m, x, y, z)
+// #define HAL_INFO4(m, x, y, z, a)
+// #define HAL_INFO5(m, x, y, z, a, b)
+// #define HAL_ERROR(m)
+// #define HAL_ERROR1(m, x)
+// #define HAL_ERROR2(m, x, y)
+// #define HAL_ERROR3(m, x, y, z)
+// #define HAL_ERROR4(m, x, y, z, a)
 
 
 #include <sys/ioctl.h>
