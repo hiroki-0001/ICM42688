@@ -30,7 +30,6 @@
 #include <thread>
 #include <cstring>
 #include "IMU.hpp"
-#include "spidev_lib.hpp"
 
 class ICM42688 : public IMU
 {
@@ -65,6 +64,9 @@ public:
       uint8_t _gyroFS;
       float _accelBias[3] = {0.0f, 0.0f, 0.0f};
       float _gyroBias[3] = {0.0f, 0.0f, 0.0f};
+
+      unsigned char m_slaveAddr;                              // I2C address of MPU9150
+
 
       // read data buffer For calibration
       uint8_t _buffer[12] = {};

@@ -56,6 +56,12 @@ Settings::Settings(const char *settingsDirectory, const char *productType)
 void Settings::setDefaults()
 {
     //  preset general defaults
+    m_I2CSlaveAddress = 0;
+    m_busIsI2C = true;
+    m_I2CBus = 1;
+    m_SPIBus = 0;
+    m_SPISelect = 0;
+    m_SPISpeed = 500000;
     m_axisRotation = XNORTH_YEAST;
     m_accelCalValid = false;
     m_gyroBiasValid = false;
@@ -95,8 +101,20 @@ bool Settings::loadSettings()
         }
 
         //  general config
-        
-        if (strcmp(key, AXIS_ROTATION) == 0) {
+
+        if (strcmp(key, BUS_IS_I2C) == 0) {
+            m_busIsI2C = strcmp(val, "true") == 0;
+        } else if (strcmp(key, I2C_BUS) == 0) {
+            m_I2CBus = atoi(val);
+        } else if (strcmp(key, SPI_BUS) == 0) {
+            m_SPIBus = atoi(val);
+        } else if (strcmp(key, SPI_SELECT) == 0) {
+            m_SPISelect = atoi(val);
+        } else if (strcmp(key, SPI_SPEED) == 0) {
+            m_SPISpeed = atoi(val);
+        } else if (strcmp(key, I2C_SLAVEADDRESS) == 0) {
+            m_I2CSlaveAddress = atoi(val);
+        } else if (strcmp(key, AXIS_ROTATION) == 0) {
             m_axisRotation = atoi(val);
 
         // accel calibration
@@ -175,6 +193,37 @@ bool Settings::saveSettings()
     setComment("");
     setComment("IMU settings file");
     setComment("");
+
+
+    setBlank();
+    setComment("");
+    setComment("Is bus I2C: 'true' for I2C, 'false' for SPI");
+    setValue(BUS_IS_I2C, m_busIsI2C);
+
+    setBlank();
+    setComment("");
+    setComment("I2C Bus (between 0 and 7) ");
+    setValue(I2C_BUS, m_I2CBus);
+
+    setBlank();
+    setComment("");
+    setComment("SPI Bus (between 0 and 7) ");
+    setValue(SPI_BUS, m_SPIBus);
+
+    setBlank();
+    setComment("");
+    setComment("SPI select (between 0 and 1) ");
+    setValue(SPI_SELECT, m_SPISelect);
+
+    setBlank();
+    setComment("");
+    setComment("SPI Speed in Hz");
+    setValue(SPI_SPEED, (int)m_SPISpeed);
+
+    setBlank();
+    setComment("");
+    setComment("I2C slave address (filled in automatically by auto discover) ");
+    setValue(I2C_SLAVEADDRESS, m_I2CSlaveAddress);
 
     setBlank();
     setComment("");

@@ -116,7 +116,6 @@ void Fusion::calculatePose(const Vector3& accel)
 
 FusionRTQF::FusionRTQF()
 {
-    std::cout << "fusion type = RTQF" << std::endl;
     reset();
 }
 
