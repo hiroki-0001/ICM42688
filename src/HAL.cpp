@@ -44,7 +44,7 @@ HAL::~HAL()
 bool HAL::HALOpen()
 {
     char buf[32];
-    unsigned char SPIMode = SPI_MODE_0;
+    unsigned char SPIMode = SPI_MODE_3;
     unsigned char SPIBits = 8;
     uint32_t SPISpeed = m_SPISpeed;
 

@@ -98,7 +98,7 @@ bool ICM42688::setBank(uint8_t bank)
 {
     if(_bank == bank)
     {
-        MESSAGE_LOG("already set bank");
+        HAL_INFO("already set bank");
         return true;
     }
     else
@@ -118,12 +118,12 @@ bool ICM42688::who_i_am()
 
     if(reg == WHO_AM_I)
     {
-        MESSAGE_LOG("ICM42688 connection successful !!!");
+        HAL_INFO("ICM42688 connection successful !!!");
         return true;
     }
     else
     {
-        MESSAGE_LOG("ICM42688 connection failed !!!");
+        HAL_INFO("ICM42688 connection failed !!!");
         return false;
     }
 }
@@ -198,7 +198,7 @@ bool ICM42688::setAccelResolutionScale(uint8_t fssel)
         _accelScale = 1.0/16384.0;
         break;    
     default:
-        ERROR_LOG("Failed to set Accel FSR");
+        HAL_ERROR("Failed to set Accel FSR");
         return false;
     }
 
@@ -246,7 +246,7 @@ bool ICM42688::setGyroResolutionScale(uint8_t fssel)
             _gyroScale = M_PI / (2097.2 * 180.0);
             break;
         default:
-            ERROR_LOG("Failed to set Gyro FSR");
+            HAL_ERROR("Failed to set Gyro FSR");
             return false;
     }
 

@@ -57,17 +57,12 @@ public:
   int IMUGetPollInterval();
 
   private:
-      SPI *spidev;
       float _accelScale = 0.0f;
       float _gyroScale = 0.0f;
       uint8_t _accelFS;
       uint8_t _gyroFS;
-      float _accelBias[3] = {0.0f, 0.0f, 0.0f};
-      float _gyroBias[3] = {0.0f, 0.0f, 0.0f};
 
       unsigned char m_slaveAddr;                              // I2C address of MPU9150
-
-
       // read data buffer For calibration
       uint8_t _buffer[12] = {};
       

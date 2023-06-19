@@ -28,7 +28,6 @@
 #define _SETTINGS_H
 
 #include "IMUMath.hpp"
-#include "spidev_lib.hpp"
 #include "HAL.hpp"
 
 //  Settings keys

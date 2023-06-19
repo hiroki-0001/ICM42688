@@ -34,7 +34,7 @@
 Settings::Settings(const char *productType)
 {
     if ((strlen(productType) > 200) || (strlen(productType) == 0)) {
-        ERROR_LOG("Product name too long or null - using default");
+        HAL_ERROR("Product name too long or null - using default");
         strcpy(m_filename, "ICM42688.ini");
     } else {
         sprintf(m_filename, "%s.ini", productType);
@@ -45,7 +45,7 @@ Settings::Settings(const char *productType)
 Settings::Settings(const char *settingsDirectory, const char *productType)
 {
     if (((strlen(productType) + strlen(settingsDirectory)) > 200) || (strlen(productType) == 0)) {
-        ERROR_LOG("Product name too long or null - using default");
+        HAL_ERROR("Product name too long or null - using default");
         strcpy(m_filename, "ICM42688.ini");
     } else {
         sprintf(m_filename, "%s/%s.ini", settingsDirectory, productType);
@@ -85,7 +85,7 @@ bool Settings::loadSettings()
     //  check to see if settings file exists
 
     if (!(m_fd = fopen(m_filename, "r"))) {
-        MESSAGE_LOG("Settings file not found. Using defaults and creating settings file")
+        HAL_INFO("Settings file not found. Using defaults and creating settings file")
         return saveSettings();
     }
 
@@ -95,7 +95,7 @@ bool Settings::loadSettings()
             continue;
 
         if (sscanf(buf, "%[^=]=%s", key, val) != 2) {
-            ERROR_LOG1("Bad line in settings file: %s\n", buf)
+            HAL_ERROR1("Bad line in settings file: %s\n", buf)
             fclose(m_fd);
             return false;
         }
@@ -171,10 +171,10 @@ bool Settings::loadSettings()
 
         //  Handle unrecognized key
         } else {
-            ERROR_LOG1("Unrecognized key in settings file: %s\n", buf);
+            HAL_ERROR1("Unrecognized key in settings file: %s\n", buf);
         }
     }
-    MESSAGE_LOG1("Settings file %s loaded\n", m_filename);
+    HAL_INFO1("Settings file %s loaded\n", m_filename);
     fclose(m_fd);
     return saveSettings();                                  // make sure settings file is correct and complete
 }
@@ -183,7 +183,7 @@ bool Settings::loadSettings()
 bool Settings::saveSettings()
 {
     if (!(m_fd = fopen(m_filename, "w"))) {
-        ERROR_LOG("Failed to open settings file for save");
+        HAL_ERROR("Failed to open settings file for save");
         return false;
     }
 
