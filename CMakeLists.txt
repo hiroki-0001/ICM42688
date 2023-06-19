@@ -27,7 +27,8 @@ target_sources(ICM42688_Lib
             src/IMUMath.cpp
             src/IMU.cpp
             src/Fusion.cpp
-            src/spidev_lib.cpp
+            #src/spidev_lib.cpp
+            src/HAL.cpp
             src/Settings.cpp
 )
 set_property(TARGET ICM42688_Lib 
@@ -38,6 +39,7 @@ set_property(TARGET ICM42688_Lib
             src/ICM42688.hpp
             src/IMU.hpp
             src/Settings.hpp
+            src/HAL.hpp
 )
 target_include_directories(ICM42688_Lib PUBLIC src)
 target_compile_features(ICM42688_Lib PRIVATE cxx_std_17)

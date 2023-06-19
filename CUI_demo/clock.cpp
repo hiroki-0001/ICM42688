@@ -50,15 +50,15 @@ int main(void)
 
   // read the fifo buffer from the IMU
   volatile size_t cnt = 0;
-  // while( cnt < 500)
-  while(true)
+  while( cnt < 500)
+  // while(true)
   {
      auto start = std::chrono::high_resolution_clock::now();
     volatile bool ok =  imu->IMURead();
      auto end = std::chrono::high_resolution_clock::now();
     time_list.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
     cnt++;
-    // std::this_thread::sleep_for(1ms);
+    std::this_thread::sleep_for(1ms);
     // end = std::chrono::high_resolution_clock::now();
     // loop_time_list.push_back(std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
   }

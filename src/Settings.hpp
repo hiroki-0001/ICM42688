@@ -28,10 +28,12 @@
 #define _SETTINGS_H
 
 #include "IMUMath.hpp"
-#include "spidev_lib.hpp"
+#include "HAL.hpp"
 
 //  Settings keys
-
+#define BUS_IS_I2C                 "BusIsI2C"
+#define I2C_SLAVEADDRESS           "I2CSlaveAddress"
+#define I2C_BUS                    "I2CBus"
 #define SPI_BUS                    "SPIBus"
 #define SPI_SELECT                 "SPISelect"
 #define SPI_SPEED                  "SPISpeed"
@@ -63,13 +65,13 @@
 #define ACCELCAL_MAXZ              "AccelCalMaxZ"
 
 
-class Settings
+class Settings : public HAL
 {
 public:
 
     //  Standard constructor sets up for ini file in working directory
 
-    Settings(const char *productType = "RTIMULib");
+    Settings(const char *productType = "ICM42688");
 
     //  Alternate constructor allow ini file to be in any directory
 
@@ -88,7 +90,7 @@ public:
     virtual bool saveSettings();
 
     //  These are the local variables
-
+    unsigned char m_I2CSlaveAddress;                        // I2C slave address of the imu
     int m_axisRotation;                                     // axis rotation code
 
     bool m_accelCalValid;                                   // true if there is valid accel calibration data

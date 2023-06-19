@@ -34,7 +34,7 @@
 Settings::Settings(const char *productType)
 {
     if ((strlen(productType) > 200) || (strlen(productType) == 0)) {
-        ERROR_LOG("Product name too long or null - using default");
+        HAL_ERROR("Product name too long or null - using default");
         strcpy(m_filename, "ICM42688.ini");
     } else {
         sprintf(m_filename, "%s.ini", productType);
@@ -45,7 +45,7 @@ Settings::Settings(const char *productType)
 Settings::Settings(const char *settingsDirectory, const char *productType)
 {
     if (((strlen(productType) + strlen(settingsDirectory)) > 200) || (strlen(productType) == 0)) {
-        ERROR_LOG("Product name too long or null - using default");
+        HAL_ERROR("Product name too long or null - using default");
         strcpy(m_filename, "ICM42688.ini");
     } else {
         sprintf(m_filename, "%s/%s.ini", settingsDirectory, productType);
@@ -56,6 +56,12 @@ Settings::Settings(const char *settingsDirectory, const char *productType)
 void Settings::setDefaults()
 {
     //  preset general defaults
+    m_I2CSlaveAddress = 104;
+    m_busIsI2C = true;
+    m_I2CBus = 1;
+    m_SPIBus = 0;
+    m_SPISelect = 0;
+    m_SPISpeed = 500000;
     m_axisRotation = XNORTH_YEAST;
     m_accelCalValid = false;
     m_gyroBiasValid = false;
@@ -79,7 +85,7 @@ bool Settings::loadSettings()
     //  check to see if settings file exists
 
     if (!(m_fd = fopen(m_filename, "r"))) {
-        MESSAGE_LOG("Settings file not found. Using defaults and creating settings file")
+        HAL_INFO("Settings file not found. Using defaults and creating settings file")
         return saveSettings();
     }
 
@@ -89,14 +95,26 @@ bool Settings::loadSettings()
             continue;
 
         if (sscanf(buf, "%[^=]=%s", key, val) != 2) {
-            ERROR_LOG1("Bad line in settings file: %s\n", buf)
+            HAL_ERROR1("Bad line in settings file: %s\n", buf)
             fclose(m_fd);
             return false;
         }
 
         //  general config
-        
-        if (strcmp(key, AXIS_ROTATION) == 0) {
+
+        if (strcmp(key, BUS_IS_I2C) == 0) {
+            m_busIsI2C = strcmp(val, "true") == 0;
+        } else if (strcmp(key, I2C_BUS) == 0) {
+            m_I2CBus = atoi(val);
+        } else if (strcmp(key, SPI_BUS) == 0) {
+            m_SPIBus = atoi(val);
+        } else if (strcmp(key, SPI_SELECT) == 0) {
+            m_SPISelect = atoi(val);
+        } else if (strcmp(key, SPI_SPEED) == 0) {
+            m_SPISpeed = atoi(val);
+        } else if (strcmp(key, I2C_SLAVEADDRESS) == 0) {
+            m_I2CSlaveAddress = atoi(val);
+        } else if (strcmp(key, AXIS_ROTATION) == 0) {
             m_axisRotation = atoi(val);
 
         // accel calibration
@@ -153,10 +171,10 @@ bool Settings::loadSettings()
 
         //  Handle unrecognized key
         } else {
-            ERROR_LOG1("Unrecognized key in settings file: %s\n", buf);
+            HAL_ERROR1("Unrecognized key in settings file: %s\n", buf);
         }
     }
-    MESSAGE_LOG1("Settings file %s loaded\n", m_filename);
+    HAL_INFO1("Settings file %s loaded\n", m_filename);
     fclose(m_fd);
     return saveSettings();                                  // make sure settings file is correct and complete
 }
@@ -165,7 +183,7 @@ bool Settings::loadSettings()
 bool Settings::saveSettings()
 {
     if (!(m_fd = fopen(m_filename, "w"))) {
-        ERROR_LOG("Failed to open settings file for save");
+        HAL_ERROR("Failed to open settings file for save");
         return false;
     }
 
@@ -175,6 +193,37 @@ bool Settings::saveSettings()
     setComment("");
     setComment("IMU settings file");
     setComment("");
+
+
+    setBlank();
+    setComment("");
+    setComment("Is bus I2C: 'true' for I2C, 'false' for SPI");
+    setValue(BUS_IS_I2C, m_busIsI2C);
+
+    setBlank();
+    setComment("");
+    setComment("I2C Bus (between 0 and 7) ");
+    setValue(I2C_BUS, m_I2CBus);
+
+    setBlank();
+    setComment("");
+    setComment("SPI Bus (between 0 and 7) ");
+    setValue(SPI_BUS, m_SPIBus);
+
+    setBlank();
+    setComment("");
+    setComment("SPI select (between 0 and 1) ");
+    setValue(SPI_SELECT, m_SPISelect);
+
+    setBlank();
+    setComment("");
+    setComment("SPI Speed in Hz");
+    setValue(SPI_SPEED, (int)m_SPISpeed);
+
+    setBlank();
+    setComment("");
+    setComment("I2C slave address (filled in automatically by auto discover) ");
+    setValue(I2C_SLAVEADDRESS, m_I2CSlaveAddress);
 
     setBlank();
     setComment("");
