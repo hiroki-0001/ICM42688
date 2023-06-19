@@ -373,8 +373,7 @@ bool ICM42688::enableFifo()
 bool ICM42688::IMURead()
 {
     uint8_t count = 12;
-    if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_ACCEL_DATA_X1, count, _buffer, "IMU data reaad error"))
-        m_error_count++;
+    if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_ACCEL_DATA_X1, count, _buffer, "error"))
         return false;
 
     Vector3::convertToVector(_buffer, m_imuData.accel, _accelScale);

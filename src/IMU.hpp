@@ -99,8 +99,6 @@ class IMU
         const Vector3& getGyro() { return m_imuData.gyro; }   // gets gyro rates in radians/sec
         const Vector3& getAccel() { return m_imuData.accel; } // get accel data in gs
 
-        const int& get_error_cnt() { return m_error_count; } // get accel data in gs
-
         Vector3 getAccelResiduals() { return m_fusion->getAccelResiduals(); }
 
     protected:
@@ -121,8 +119,6 @@ class IMU
         Vector3 m_previousAccel;                              // previous step accel for gyro learning
 
         static float m_axisRotation[AXIS_ROTATION_COUNT][9];    // array of rotation matrices
-
-        int m_error_count = 0;
 
 };
 
