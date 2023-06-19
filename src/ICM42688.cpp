@@ -84,9 +84,9 @@ bool ICM42688::IMUInit()
     if(!setSampleRate(230.7))
         return false;
 
-    // enable FIFO mode
-    if(!enableFifo())
-        return false;
+    // // enable FIFO mode
+    // if(!enableFifo())
+    //     return false;
 
     gyroBiasInit();
     
@@ -104,7 +104,7 @@ bool ICM42688::setBank(uint8_t bank)
     else
     {
         _bank = bank;
-        if(!m_settings->HALWrite(m_slaveAddr, ICM42688reg::REG_BANK_SEL, bank, "Failed to HALWrite set User Bank"))
+        if(!m_settings->HALWrite(m_slaveAddr, ICM42688reg::REG_BANK_SEL, bank, "Failed to Write set User Bank"))
             return false;
         return true;
     }
@@ -113,7 +113,7 @@ bool ICM42688::setBank(uint8_t bank)
 bool ICM42688::who_i_am()
 {
     uint8_t reg = 0;
-    if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_WHO_AM_I, 1, &reg, "Failed to HALRead ICM42688 ID"))
+    if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_WHO_AM_I, 1, &reg, "Failed to Read ICM42688 ID"))
         return false;
 
     if(reg == WHO_AM_I)
@@ -138,14 +138,12 @@ bool ICM42688::setSampleRate(int rate)
 bool ICM42688::setUIFilter()
 {
     uint8_t reg, reg2;
-    if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_GYRO_CONFIG1, 1, &reg, "Failed HALRead to UB0_REG_GYRO_CONFIG1"))
+    if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_GYRO_CONFIG1, 1, &reg, "Failed Read to UB0_REG_GYRO_CONFIG1"))
         return false;
 
-    if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_ACCEL_CONFIG1, 1, &reg2, "Failed HALRead to UB0_REG_GYRO_CONFIG1"))
+    if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_ACCEL_CONFIG1, 1, &reg2, "Failed Read to UB0_REG_GYRO_CONFIG1"))
         return false;
 
-    std::cout << "gyro_config1 = " << std::bitset<8>(reg) << std::endl;
-    std::cout << "accel_config1 = " << std::bitset<8>(reg2) << std::endl;
     return true;
 }
 
@@ -160,8 +158,6 @@ bool ICM42688::setAccelLowPassFilter(uint8_t lpf)
     if(!m_settings->HALWrite(m_slaveAddr, ICM42688reg::UB0_REG_GYRO_ACCEL_CONFIG0, reg, "Failed to set Accel Low-Pass Filter"))
         return false;
 
-    std::cout << "Accel low pass filter = " << std::bitset<8>(reg) << std::endl;
-
     return true;
 }
 
@@ -175,8 +171,6 @@ bool ICM42688::setGyroLowPassFilter(uint8_t lpf)
 
     if(!m_settings->HALWrite(m_slaveAddr, ICM42688reg::UB0_REG_GYRO_ACCEL_CONFIG0, reg, "Failed to set Accel Low-Pass Filter"))
         return false;
-
-    std::cout << "Gyro low pass filter = " << std::bitset<8>(reg) << std::endl;
 
     return true;
 }
@@ -203,15 +197,12 @@ bool ICM42688::setAccelResolutionScale(uint8_t fssel)
     }
 
     uint8_t reg = 0;
-    if(!m_settings -> HALRead(m_slaveAddr, ICM42688reg::UB0_REG_ACCEL_CONFIG0, 1, &reg, "Failed to HALRead Accel Resolution Scale"))
+    if(!m_settings -> HALRead(m_slaveAddr, ICM42688reg::UB0_REG_ACCEL_CONFIG0, 1, &reg, "Failed to Read Accel Resolution Scale"))
         return false;
     // onle change FSR in reg
     reg = (fssel << 5) | (reg & 0x1F);
     if(!m_settings->HALWrite(m_slaveAddr, ICM42688reg::UB0_REG_ACCEL_CONFIG0, reg, "Failed to set Accel Resolution Scale"))
         return false;
-
-    std::cout << "Accel FSR = " << std::bitset<8>(reg) << std::endl;
-    
 
     _accelFS = fssel;
 
@@ -251,15 +242,13 @@ bool ICM42688::setGyroResolutionScale(uint8_t fssel)
     }
 
     uint8_t reg = 0;
-    if(!m_settings -> HALRead(m_slaveAddr, ICM42688reg::UB0_REG_GYRO_CONFIG0, 1, &reg, "Failed to HALRead Gyro Resolution Scale"))
+    if(!m_settings -> HALRead(m_slaveAddr, ICM42688reg::UB0_REG_GYRO_CONFIG0, 1, &reg, "Failed to Read Gyro Resolution Scale"))
         return false;
     // onle change FSR in reg
     reg = (fssel << 5) | (reg & 0x1F);
     if(!m_settings->HALWrite(m_slaveAddr, ICM42688reg::UB0_REG_GYRO_CONFIG0, reg, "Failed to set Gyro Resolution Scale"))
         return false;
     
-    std::cout << "Gyro FSR = " << std::bitset<8>(reg) << std::endl;
-
     _gyroFS = fssel;
     
     return true;
@@ -268,28 +257,24 @@ bool ICM42688::setGyroResolutionScale(uint8_t fssel)
 bool ICM42688::setAccelOutputDataRate(uint8_t odr)
 {
     uint8_t reg = 0;
-    if(!m_settings -> HALRead(m_slaveAddr, ICM42688reg::UB0_REG_ACCEL_CONFIG0,  1, &reg, "Failed to HALRead Accel Output Data Rate"))
+    if(!m_settings -> HALRead(m_slaveAddr, ICM42688reg::UB0_REG_ACCEL_CONFIG0,  1, &reg, "Failed to Read Accel Output Data Rate"))
         return false;
     // onle change ODR in reg
     reg = odr | (reg & 0xF0);
     if(!m_settings->HALWrite(m_slaveAddr, ICM42688reg::UB0_REG_ACCEL_CONFIG0, reg, "Failed to set Accel Output Data Rate"))
         return false;
     
-    std::cout << "Accel ODR = " << std::bitset<8>(reg) << std::endl;
-
     return true;
 }
 bool ICM42688::setGyroOutputDataRate(uint8_t odr)
 {
     uint8_t reg = 0;
-    if(!m_settings -> HALRead(m_slaveAddr, ICM42688reg::UB0_REG_GYRO_CONFIG0,  1, &reg, "Failed to HALRead Gyro Output Data Rate"))
+    if(!m_settings -> HALRead(m_slaveAddr, ICM42688reg::UB0_REG_GYRO_CONFIG0,  1, &reg, "Failed to Read Gyro Output Data Rate"))
         return false;
     // onle change ODR in reg
     reg = odr | (reg & 0xF0);
     if(!m_settings->HALWrite(m_slaveAddr, ICM42688reg::UB0_REG_GYRO_CONFIG0, reg, "Failed to set Gyro Output Data Rate"))
         return false;
-
-    std::cout << "Gyro ODR = " << std::bitset<8>(reg) << std::endl;
 
     return true;
 }
@@ -323,7 +308,7 @@ bool ICM42688::enableFifo()
 //     unsigned int count = 0;
 //     unsigned char fifodata[16];
 
-//     if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_COUNTH, 2, fifoCount, "Failed to HALRead FIFO COUNT"))
+//     if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_COUNTH, 2, fifoCount, "Failed to Read FIFO COUNT"))
 //         return false;
 
 //     count = (((uint16_t) fifoCount[0]) << 8) + (((uint16_t) fifoCount[1]));
@@ -338,7 +323,7 @@ bool ICM42688::enableFifo()
 
 //     while(count > _fifoFrameSize)
 //     {
-//         if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to HALRead FIFO data"))
+//         if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to Read FIFO data"))
 //             return false;
 //         count -= _fifoFrameSize;
 //     }
@@ -347,12 +332,12 @@ bool ICM42688::enableFifo()
 //     // 使用しないようにする
 //     if(count < _fifoFrameSize)
 //     {
-//         m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, count, fifodata, "Failed to HALRead FIFO data");
+//         m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, count, fifodata, "Failed to Read FIFO data");
 //         return false;
 //     }
 
 //     // 上記の条件が一致しない場合は正常であるため、bufferからデータを読み込み、使用する
-//     if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to HALRead fifo data"))
+//     if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to Read fifo data"))
 //         return false;
 
 //     Vector3::convertToVector(fifodata + 1, m_imuData.accel, _accelScale);
@@ -379,9 +364,8 @@ bool ICM42688::IMURead()
     Vector3::convertToVector(_buffer, m_imuData.accel, _accelScale);
     Vector3::convertToVector(_buffer + 6, m_imuData.gyro, _gyroScale);
 
+    handleGyroBias();
     m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
-
-
     updateFusion();
 
     return true;
