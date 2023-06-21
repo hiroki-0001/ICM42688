@@ -36,7 +36,8 @@
 #define I2C_BUS                    "I2CBus"
 #define SPI_BUS                    "SPIBus"
 #define SPI_SELECT                 "SPISelect"
-#define SPI_SPEED                  "SPISpeed"
+#define SPI_READ_SPEED             "SPIReadSpeed"
+#define SPI_WRITE_SPEED            "SPIWriteSpeed"
 #define AXIS_ROTATION              "AxisRotation"
 
 //  ICM42688 settings keys

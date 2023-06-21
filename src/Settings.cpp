@@ -61,7 +61,8 @@ void Settings::setDefaults()
     m_I2CBus = 1;
     m_SPIBus = 0;
     m_SPISelect = 0;
-    m_SPISpeed = 500000;
+    m_SPIReadSpeed = 8000000;
+    m_SPIWriteSpeed = 1000000;
     m_axisRotation = XNORTH_YEAST;
     m_accelCalValid = false;
     m_gyroBiasValid = false;
@@ -110,8 +111,10 @@ bool Settings::loadSettings()
             m_SPIBus = atoi(val);
         } else if (strcmp(key, SPI_SELECT) == 0) {
             m_SPISelect = atoi(val);
-        } else if (strcmp(key, SPI_SPEED) == 0) {
-            m_SPISpeed = atoi(val);
+        } else if (strcmp(key, SPI_READ_SPEED) == 0) {
+            m_SPIReadSpeed = atoi(val);
+        } else if (strcmp(key, SPI_WRITE_SPEED) == 0) {
+            m_SPIWriteSpeed = atoi(val);
         } else if (strcmp(key, I2C_SLAVEADDRESS) == 0) {
             m_I2CSlaveAddress = atoi(val);
         } else if (strcmp(key, AXIS_ROTATION) == 0) {
@@ -217,8 +220,13 @@ bool Settings::saveSettings()
 
     setBlank();
     setComment("");
-    setComment("SPI Speed in Hz");
-    setValue(SPI_SPEED, (int)m_SPISpeed);
+    setComment("SPI Read Speed in Hz");
+    setValue(SPI_READ_SPEED, (int)m_SPIReadSpeed);
+
+    setBlank();
+    setComment("");
+    setComment("SPI Write Speed in Hz");
+    setValue(SPI_WRITE_SPEED, (int)m_SPIWriteSpeed);
 
     setBlank();
     setComment("");

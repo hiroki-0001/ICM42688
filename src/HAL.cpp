@@ -33,7 +33,8 @@ HAL::HAL()
     m_currentSlave = 255;
     m_I2C = -1;
     m_SPI = -1;
-    m_SPISpeed = 500000;
+    m_SPIReadSpeed = 500000;
+    m_SPIWriteSpeed = 500000;
 }
 
 HAL::~HAL()
@@ -44,9 +45,13 @@ HAL::~HAL()
 bool HAL::HALOpen()
 {
     char buf[32];
-    unsigned char SPIMode = SPI_MODE_3;
+    unsigned char SPIMode = SPI_MODE_0;
     unsigned char SPIBits = 8;
-    uint32_t SPISpeed = m_SPISpeed;
+    uint32_t SPIReadSpeed = m_SPIReadSpeed;
+    uint32_t SPIWriteSpeed = m_SPIWriteSpeed;
+
+    HAL_INFO1("SPIReadSpeed = %d", SPIReadSpeed);
+    HAL_INFO1("SPIWriteSpeed = %d", SPIWriteSpeed);
 
     if (m_busIsI2C) {
         if (m_I2C >= 0)
@@ -101,14 +106,14 @@ bool HAL::HALOpen()
             return false;
         }
 
-        if (ioctl(m_SPI, SPI_IOC_WR_MAX_SPEED_HZ, &SPISpeed) < 0) {
-             HAL_ERROR2("Failed to set WR %dHz on bus %d", SPISpeed, m_SPIBus);
+        if (ioctl(m_SPI, SPI_IOC_WR_MAX_SPEED_HZ, &SPIWriteSpeed) < 0) {
+             HAL_ERROR2("Failed to set WR %dHz on bus %d", SPIWriteSpeed, m_SPIBus);
              close(m_SPIBus);
              return false;
         }
 
-        if (ioctl(m_SPI, SPI_IOC_RD_MAX_SPEED_HZ, &SPISpeed) < 0) {
-             HAL_ERROR2("Failed to set RD %dHz on bus %d", SPISpeed, m_SPIBus);
+        if (ioctl(m_SPI, SPI_IOC_RD_MAX_SPEED_HZ, &SPIReadSpeed) < 0) {
+             HAL_ERROR2("Failed to set RD %dHz on bus %d", SPIReadSpeed, m_SPIBus);
              close(m_SPIBus);
              return false;
         }

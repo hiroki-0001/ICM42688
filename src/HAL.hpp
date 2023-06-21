@@ -77,7 +77,8 @@ public:
     unsigned char m_I2CBus;                                 // I2C bus of the imu (eg 1 for Raspberry Pi usually)
     unsigned char m_SPIBus;                                 // SPI bus of the imu (eg 0 for Raspberry Pi usually)
     unsigned char m_SPISelect;                              // SPI select line - defaults to CE0
-    unsigned int m_SPISpeed;                                // speed of interface
+    unsigned int m_SPIReadSpeed;                                // speed of interface
+    unsigned int m_SPIWriteSpeed;                                // speed of interface
 
     bool HALOpen();
     void HALClose();
