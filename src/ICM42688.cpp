@@ -85,8 +85,8 @@ bool ICM42688::IMUInit()
         return false;
 
     // // enable FIFO mode
-    // if(!enableFifo())
-    //     return false;
+    if(!enableFifo())
+        return false;
 
     gyroBiasInit();
     
@@ -301,71 +301,53 @@ bool ICM42688::enableFifo()
     return true;
 }
 
-// bool ICM42688::IMURead()
-// {
-//     // FIFOで使用可能なバイト数を読み込む。 High bitと Low bitの2つに分けられているので、まとめて取得する。
-//     unsigned char fifoCount[2];
-//     unsigned int count = 0;
-//     unsigned char fifodata[16];
-
-//     if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_COUNTH, 2, fifoCount, "Failed to Read FIFO COUNT"))
-//         return false;
-
-//     count = (((uint16_t) fifoCount[0]) << 8) + (((uint16_t) fifoCount[1]));
-
-//     // FIFOのオーバーフローの処理　2048byteに到達した際、FIFOのbufferを空にする。
-//     if(count == 2048)
-//     {
-//         if(!m_settings->HALWrite(m_slaveAddr, ICM42688reg::UB0_REG_SIGNAL_PATH_RESET, 0x02, "Failed to FIFO buffer flush"))
-//             return false;
-//         return false;
-//     }
-
-//     while(count > _fifoFrameSize)
-//     {
-//         if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to Read FIFO data"))
-//             return false;
-//         count -= _fifoFrameSize;
-//     }
-
-//     // FIFOの利用可能なbyte数がFIFOのFrameSize(16 byte)よりも少ない場合は、データのbyteがずれるおそれがあるため
-//     // 使用しないようにする
-//     if(count < _fifoFrameSize)
-//     {
-//         m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, count, fifodata, "Failed to Read FIFO data");
-//         return false;
-//     }
-
-//     // 上記の条件が一致しない場合は正常であるため、bufferからデータを読み込み、使用する
-//     if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to Read fifo data"))
-//         return false;
-
-//     Vector3::convertToVector(fifodata + 1, m_imuData.accel, _accelScale);
-//     Vector3::convertToVector(fifodata + 7, m_imuData.gyro, _gyroScale);
-//     IMU::convertToTemperature(fifodata + 13);
-
-//     handleGyroBias();
-
-
-//     m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
-
-//     updateFusion();
-
-//     return true;
-// }
-
-
 bool ICM42688::IMURead()
 {
-    uint8_t count = 12;
-    if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_ACCEL_DATA_X1, count, _buffer, "error"))
+    // FIFOで使用可能なバイト数を読み込む。 High bitと Low bitの2つに分けられているので、まとめて取得する。
+    unsigned char fifoCount[2];
+    unsigned int count = 0;
+    unsigned char fifodata[16];
+
+    if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_COUNTH, 2, fifoCount, "Failed to Read FIFO COUNT"))
         return false;
 
-    Vector3::convertToVector(_buffer, m_imuData.accel, _accelScale);
-    Vector3::convertToVector(_buffer + 6, m_imuData.gyro, _gyroScale);
+    count = (((uint16_t) fifoCount[0]) << 8) + (((uint16_t) fifoCount[1]));
+
+    // FIFOのオーバーフローの処理　2048byteに到達した際、FIFOのbufferを空にする。
+    if(count == 2048)
+    {
+        if(!m_settings->HALWrite(m_slaveAddr, ICM42688reg::UB0_REG_SIGNAL_PATH_RESET, 0x02, "Failed to FIFO buffer flush"))
+            return false;
+        return false;
+    }
+
+    while(count > _fifoFrameSize)
+    {
+        if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to Read FIFO data"))
+            return false;
+        count -= _fifoFrameSize;
+    }
+
+    // FIFOの利用可能なbyte数がFIFOのFrameSize(16 byte)よりも少ない場合は、データのbyteがずれるおそれがあるため
+    // 使用しないようにする
+    if(count < _fifoFrameSize)
+    {
+        m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, count, fifodata, "Failed to Read FIFO data");
+        return false;
+    }
+
+    // 上記の条件が一致しない場合は正常であるため、bufferからデータを読み込み、使用する
+    if(!m_settings->HALRead(m_slaveAddr, ICM42688reg::UB0_REG_FIFO_DATA, _fifoFrameSize, fifodata, "Failed to Read fifo data"))
+        return false;
+
+    Vector3::convertToVector(fifodata + 1, m_imuData.accel, _accelScale);
+    Vector3::convertToVector(fifodata + 7, m_imuData.gyro, _gyroScale);
+    IMU::convertToTemperature(fifodata + 13);
 
     handleGyroBias();
+
     m_imuData.timestamp = IMUMath::currentUSecsSinceEpoch();
+
     updateFusion();
 
     return true;
