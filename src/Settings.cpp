@@ -57,13 +57,13 @@ void Settings::setDefaults()
 {
     //  preset general defaults
     m_I2CSlaveAddress = 104;
-    m_busIsI2C = false;
+    m_busIsI2C = true;
     m_I2CBus = 1;
     m_SPIBus = 0;
     m_SPISelect = 0;
     m_SPIReadSpeed = 8000000;
     m_SPIWriteSpeed = 1000000;
-    m_axisRotation = XWEST_YNORTH;
+    m_axisRotation = XNORTH_YEAST;
     m_accelCalValid = false;
     m_gyroBiasValid = false;
 
@@ -243,30 +243,30 @@ bool Settings::saveSettings()
     setComment("with the IMU horizontal. There are 24 different possible orientations as defined ");
     setComment("below. Setting the axis rotation code to non-zero values performs the repositioning.");
 
-    setComment(" 0  - XNORTH_YEAST (default)");
-    setComment(" 1  - XEAST_YSOUTH");
-    setComment(" 2  - XSOUTH_YWEST");
-    setComment(" 3  - XWEST_YNORTH (SUSTAINA-OP)");
-    setComment(" 4  - XNORTH_YWEST");
-    setComment(" 5  - XEAST_YNORTH");
-    setComment(" 6  - XSOUTH_YEAST");
-    setComment(" 7  - XWEST_YSOUTH");
-    setComment(" 8  - XUP_YNORTH");
-    setComment(" 9  - XUP_YEAST");
-    setComment(" 10 - XUP_YSOUTH");
-    setComment(" 11 - XUP_YWEST");
-    setComment(" 12 - XDOWN_YNORTH");
-    setComment(" 13 - XDOWN_YEAST");
-    setComment(" 14 - XDOWN_YSOUTH");
-    setComment(" 15 - XDOWN_YWEST");
-    setComment(" 16 - XNORTH_YUP");
-    setComment(" 17 - XEAST_YUP");
-    setComment(" 18 - XSOUTH_YUP");
-    setComment(" 19 - XWEST_YUP");
-    setComment(" 20 - XNORTH_YDOWN");
-    setComment(" 21 - XEAST_YDOWN");
-    setComment(" 22 - XSOUTH_YDOWN");
-    setComment(" 23 - XWEST_YDOWN");
+    setComment(" 0  - XNORTH_YEAST (default)    ");
+    setComment(" 1  - XEAST_YSOUTH              ");
+    setComment(" 2  - XSOUTH_YWEST              ");
+    setComment(" 3  - XWEST_YNORTH              ");
+    setComment(" 4  - XNORTH_YWEST              ");
+    setComment(" 5  - XEAST_YNORTH              ");
+    setComment(" 6  - XSOUTH_YEAST              ");
+    setComment(" 7  - XWEST_YSOUTH              ");
+    setComment(" 8  - XUP_YNORTH                ");
+    setComment(" 9  - XUP_YEAST                 ");
+    setComment(" 10 - XUP_YSOUTH                ");
+    setComment(" 11 - XUP_YWEST                 ");
+    setComment(" 12 - XDOWN_YNORTH              ");
+    setComment(" 13 - XDOWN_YEAST               ");
+    setComment(" 14 - XDOWN_YSOUTH              ");
+    setComment(" 15 - XDOWN_YWEST               ");
+    setComment(" 16 - XNORTH_YUP                ");
+    setComment(" 17 - XEAST_YUP                 ");
+    setComment(" 18 - XSOUTH_YUP                ");
+    setComment(" 19 - XWEST_YUP                 ");
+    setComment(" 20 - XNORTH_YDOWN              ");
+    setComment(" 21 - XEAST_YDOWN               ");
+    setComment(" 22 - XSOUTH_YDOWN              ");
+    setComment(" 23 - XWEST_YDOWN               ");
     setValue(AXIS_ROTATION, m_axisRotation);
 
     //  Accel calibration settings
