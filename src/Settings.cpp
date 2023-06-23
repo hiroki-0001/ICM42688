@@ -57,7 +57,7 @@ void Settings::setDefaults()
 {
     //  preset general defaults
     m_I2CSlaveAddress = 104;
-    m_busIsI2C = true;
+    m_busIsI2C = false;
     m_I2CBus = 1;
     m_SPIBus = 0;
     m_SPISelect = 0;
