@@ -29,9 +29,9 @@
 #include <cstdint>
 #include <sys/time.h>
 
-#define	PI					3.1415926535
-#define	DEGREE_TO_RAD		(PI / 180.0)
-#define	RAD_TO_DEGREE		(180.0 / PI)
+constexpr	double IMU_PI				=	3.1415926535;
+constexpr	double IMU_DEGREE_TO_RAD	=	(IMU_PI / 180.0);
+constexpr	double IMU_RAD_TO_DEGREE	=	(180.0 / IMU_PI);
 
 class Vector3;
 class Quaternion;
