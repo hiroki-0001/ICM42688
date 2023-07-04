@@ -114,9 +114,9 @@ void RTIMULibDemoGL::timerEvent(QTimerEvent *event)
         m_accelY->setText(QString::number(m_imuData.accel.y(), 'f', 6));
         m_accelZ->setText(QString::number(m_imuData.accel.z(), 'f', 6));
 
-        m_fusionPoseX->setText(QString::number(m_imuData.fusionPose.x() * RAD_TO_DEGREE, 'f', 6));
-        m_fusionPoseY->setText(QString::number(m_imuData.fusionPose.y() * RAD_TO_DEGREE, 'f', 6));
-        m_fusionPoseZ->setText(QString::number(m_imuData.fusionPose.z() * RAD_TO_DEGREE, 'f', 6));
+        m_fusionPoseX->setText(QString::number(m_imuData.fusionPose.x() * IMU_RAD_TO_DEGREE, 'f', 6));
+        m_fusionPoseY->setText(QString::number(m_imuData.fusionPose.y() * IMU_RAD_TO_DEGREE, 'f', 6));
+        m_fusionPoseZ->setText(QString::number(m_imuData.fusionPose.z() * IMU_RAD_TO_DEGREE, 'f', 6));
 
         m_fusionQPoseScalar->setText(QString::number(m_imuData.fusionQPose.scalar(), 'f', 6));
         m_fusionQPoseX->setText(QString::number(m_imuData.fusionQPose.x(), 'f', 6));
