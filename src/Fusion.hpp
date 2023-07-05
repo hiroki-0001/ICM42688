@@ -60,7 +60,7 @@ class Fusion
 
         Quaternion m_gravity;                                 // the gravity vector as a quaternion
 
-        float m_slerpPower = 0;                                   // a value 0 to 1 that controls measured state influence
+        float m_slerpPower = 0.02;                                   // a value 0 to 1 that controls measured state influence
         Quaternion m_rotationDelta;                           // amount by which measured state differs from predicted
         Quaternion m_rotationPower;                           // delta raised to the appopriate power
         Vector3 m_rotationUnitVector;                         // the vector part of the rotation delta
