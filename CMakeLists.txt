@@ -43,4 +43,4 @@ set_property(TARGET ICM42688_Lib
 )
 target_include_directories(ICM42688_Lib PUBLIC src)
 target_compile_features(ICM42688_Lib PRIVATE cxx_std_17)
-target_compile_options(ICM42688_Lib PRIVATE -Wall -O2 -march=native)
+target_compile_options(ICM42688_Lib PRIVATE -Wall -O2)
